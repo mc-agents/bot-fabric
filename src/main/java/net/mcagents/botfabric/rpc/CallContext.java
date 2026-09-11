@@ -75,8 +75,14 @@ public final class CallContext {
                 JsonObject descriptor = new JsonObject();
                 descriptor.addProperty("id", blob.id().toString());
                 descriptor.addProperty("mime", blob.mime());
-                descriptor.addProperty("name", blob.name());
                 descriptor.addProperty("bytes", blob.content().length);
+                if (blob.name() != null) {
+                    descriptor.addProperty("name", blob.name());
+                }
+                if (blob.width() != null && blob.height() != null) {
+                    descriptor.addProperty("width", blob.width());
+                    descriptor.addProperty("height", blob.height());
+                }
                 array.add(descriptor);
             }
             result.add("blobs", array);

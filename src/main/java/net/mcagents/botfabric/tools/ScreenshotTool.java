@@ -118,13 +118,8 @@ public final class ScreenshotTool implements Tool {
                 png = encode(source);
             }
 
-            JsonObject data = new JsonObject();
-            data.addProperty("width", outWidth);
-            data.addProperty("height", outHeight);
-            data.addProperty("bytes", png.length);
-
             call.ok("captured a %dx%d frame (%d bytes)".formatted(outWidth, outHeight, png.length),
-                    data, List.of(Blob.png("screenshot.png", png)));
+                    null, List.of(Blob.image("image/png", "screenshot.png", outWidth, outHeight, png)));
         }
 
         private static byte[] encode(NativeImage image) throws Exception {
