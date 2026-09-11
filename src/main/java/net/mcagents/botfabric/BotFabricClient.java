@@ -4,6 +4,8 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.gui.screens.AccessibilityOnboardingScreen;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.mcagents.botfabric.event.EventPump;
 import net.mcagents.botfabric.rpc.Dispatcher;
 import net.mcagents.botfabric.rpc.RpcClient;
@@ -65,8 +67,11 @@ public class BotFabricClient implements ClientModInitializer {
             if (!configured[0]) {
                 configured[0] = true;
                 minecraft.options.pauseOnLostFocus = false;
+                minecraft.options.onboardAccessibility = false;
+                minecraft.options.save();
             }
-            if (minecraft.screen instanceof net.minecraft.client.gui.screens.ChatScreen) {
+            if (minecraft.screen instanceof ChatScreen
+                    || minecraft.screen instanceof AccessibilityOnboardingScreen) {
                 minecraft.setScreen(null);
             }
             scheduler.tick();
