@@ -100,7 +100,8 @@ public final class Dispatcher {
 
     private void onHelloOk(JsonObject message) {
         LOGGER.info("linked as session {}", Json.string(message, "sessionId", "?"));
-        session.report("linked");
+        /* "idle" is the protocol's word for linked and in no world. */
+        session.report("idle");
     }
 
     private void onConnect(RpcClient client, JsonObject message) {
@@ -159,7 +160,8 @@ public final class Dispatcher {
             if (Mc.client().level != null) {
                 Mc.client().disconnect(new net.minecraft.client.gui.screens.TitleScreen(), false);
             }
-            session.report("disconnected", reason, null);
+            /* Told to leave, so nothing went wrong: linked and in no world is idle. */
+            session.report("idle", reason, null);
             call.ok("left the game: " + reason);
         });
     }

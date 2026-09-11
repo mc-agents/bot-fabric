@@ -54,21 +54,28 @@ jobs:
 
       - run: ./gradlew buildAll
 
+      # By version, not by glob. build/libs keeps every jar it has ever produced, so on a tree
+      # that has been built before, *.jar is four copies of one mod and Fabric refuses to load a
+      # duplicate mod id. A CI runner starts clean and would never have shown it.
       - name: collect the mod jars
+        env:
+          MOD_VERSION: ${{ steps.versions.outputs.modVersion }}
         run: |
           set -eu
-          mkdir -p dist
+          rm -rf dist-all
           for properties in versions/*/gradle.properties; do
             project=$(basename "$(dirname "$properties")")
-            mkdir -p "dist/$project"
-            cp "versions/$project/build/libs/"*.jar "dist/$project/"
+            jar="versions/$project/build/libs/botfabric-${MOD_VERSION}+${project}.jar"
+            test -f "$jar" || { echo "no $jar; did the build produce a different name?" >&2; exit 1; }
+            mkdir -p "dist-all/$project"
+            cp "$jar" "dist-all/$project/"
           done
-          find dist -type f -name '*.jar' -print
+          find dist-all -type f -name '*.jar' -print
 
       - uses: actions/upload-artifact@v4
         with:
           name: mod-jars
-          path: dist/
+          path: dist-all/
           if-no-files-found: error
 
   # The end to end check, and the reason a version bump is survivable: it joins a real Paper

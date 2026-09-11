@@ -28,7 +28,10 @@ ENV LIBGL_ALWAYS_SOFTWARE=1 \
     BOT_FABRIC_LOADER=${LOADER_VERSION}
 
 COPY docker/fetch-minecraft.py docker/entrypoint.sh /opt/bot-fabric/
-COPY dist/ /opt/bot-fabric/mods/
+# Flat: one jar for the Minecraft version this image is for, not a directory per version. The
+# entrypoint copies mods/*.jar into the game directory, so a nested dist produces an image that
+# starts a client with no bot mod in it -- which looks like a client that will not link.
+COPY dist/*.jar /opt/bot-fabric/mods/
 
 # Loom puts Fabric API on the classpath in a dev run; a real launch wants it as a mod. It is
 # Apache-2.0, so unlike the client jar it can live in the image.
