@@ -1,0 +1,10 @@
+connect 127.0.0.1 25578 fabric_bot 30000
+sleep 1
+call get-position {}
+call send-chat {"message":"bot-fabric is here"}
+call run-command {"command":"time set day","collectMs":1000}
+sleep 1
+call screenshot {"width":854,"height":480,"hud":true}
+call wait-ticks {"ticks":10}
+call read-window {}
+call not-a-tool {}

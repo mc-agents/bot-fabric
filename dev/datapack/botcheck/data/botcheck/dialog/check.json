@@ -1,0 +1,39 @@
+{
+  "type": "minecraft:multi_action",
+  "title": "Bot check",
+  "external_title": "Bot check",
+  "can_close_with_escape": true,
+  "body": [
+    {
+      "type": "minecraft:plain_message",
+      "contents": "Which button did the bot press?"
+    }
+  ],
+  "columns": 1,
+  "actions": [
+    {
+      "label": "Ping back",
+      "action": {
+        "type": "minecraft:run_command",
+        "command": "help"
+      }
+    },
+    {
+      "label": "Say hello",
+      "action": {
+        "type": "minecraft:run_command",
+        "command": "say dialog button A was pressed"
+      }
+    },
+    {
+      "label": "Custom ping",
+      "action": {
+        "type": "minecraft:dynamic/custom",
+        "id": "botcheck:pressed"
+      }
+    }
+  ],
+  "exit_action": {
+    "label": "Close"
+  }
+}

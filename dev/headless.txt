@@ -1,0 +1,14 @@
+connect host.docker.internal 25578 fabric_bot 60000
+sleep 2
+call run-command {"command":"title fabric_bot times 10 400 10","collectMs":500}
+call run-command {"command":"title fabric_bot subtitle {\"text\":\"custom font check\",\"font\":\"minecraft:alt\"}","collectMs":500}
+call run-command {"command":"title fabric_bot title {\"text\":\"BOT FABRIC\",\"font\":\"minecraft:illageralt\"}","collectMs":500}
+sleep 1
+call screenshot {"width":854,"height":480,"hud":true}
+call run-command {"command":"dialog show fabric_bot botcheck:check","collectMs":800}
+sleep 1
+call screenshot {"width":854,"height":480,"hud":true}
+call press-dialog-button {"label":"Ping back"}
+sleep 2
+call get-position {}
+call screenshot {"width":854,"height":480,"hud":true}
