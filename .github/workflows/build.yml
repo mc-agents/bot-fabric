@@ -137,8 +137,8 @@ jobs:
           harness=$!
           docker run -d --name bot \
             --add-host host.docker.internal:host-gateway \
-            -e MCAGENTS_RPC_HOST=host.docker.internal \
-            -e MCAGENTS_RPC_PORT=8765 \
+            -e MCP_SERVER_HOST=host.docker.internal \
+            -e MCP_SERVER_PORT=8765 \
             bot-fabric:ci
           wait "$harness"
 

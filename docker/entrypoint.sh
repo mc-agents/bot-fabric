@@ -46,7 +46,7 @@ done
 export DISPLAY=":$DISPLAY_NUMBER"
 
 exec java $JAVA_OPTS -cp "$classpath" "$main_class" \
-    --username "${MCAGENTS_BOT_NAME:-fabric_bot}" \
+    --username "${BOT_NAME:-fabric_bot}" \
     --uuid 00000000-0000-0000-0000-000000000000 \
     --accessToken 0 \
     --userType legacy \

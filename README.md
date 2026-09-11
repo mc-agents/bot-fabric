@@ -210,7 +210,7 @@ docker build --platform linux/amd64 \
     --build-arg LOADER_VERSION=0.19.5 \
     --build-arg FABRIC_API_VERSION=0.155.3+26.1.2 \
     -t bot-fabric:dev .
-docker run --rm -v bot-fabric-mc:/mc -e MCAGENTS_RPC_HOST=... bot-fabric:dev
+docker run --rm -v bot-fabric-mc:/mc -e MCP_SERVER_HOST=... bot-fabric:dev
 ```
 
 The image carries the mod, Fabric API, Fabric loader and a virtual X server — **not Minecraft**.
@@ -228,11 +228,11 @@ matrix comes from `./gradlew printVersions`, so adding a version does not touch 
 
 | variable | default | |
 | --- | --- | --- |
-| `MCAGENTS_RPC_HOST` | `127.0.0.1` | where `mcp-server` listens |
-| `MCAGENTS_RPC_PORT` | `8765` | |
-| `MCAGENTS_BOT_NAME` | `fabric_bot` | reported in `hello` |
-| `MCAGENTS_RPC_RECONNECT_MS` | `2000` | |
-| `MCAGENTS_RPC_ENABLED` | `true` | `false` runs a plain client |
+| `MCP_SERVER_HOST` | `127.0.0.1` | where `mcp-server` listens |
+| `MCP_SERVER_PORT` | `8765` | |
+| `BOT_NAME` | `fabric_bot` | reported in `hello` |
+| `RECONNECT_MIN_MS` | `2000` | |
+| `BOT_RPC_ENABLED` | `true` | `false` runs a plain client |
 
 Each has a system property twin (`mcagents.rpc.port` and so on) so the Gradle run configs can
 set them: `./gradlew runClient -Prpc.port=8766`.
