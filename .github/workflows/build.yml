@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE: ghcr.io/mc-agents/bot-fabric
+  REGISTRY: junhyung.cloud
+  IMAGE: junhyung.cloud/library/bot-fabric
 
 jobs:
   check:
@@ -163,8 +163,8 @@ jobs:
         include: ${{ fromJson(needs.check.outputs.versions) }}
     permissions:
       contents: read
-      # ghcr.io accepts GITHUB_TOKEN, so no registry secret has to exist anywhere.
-      packages: write
+      # Harbor takes a robot account, so the credentials are repository secrets. cosign
+      # stays keyless: the certificate comes from Fulcio and no key lives here either.
       # Lets cosign fetch a short-lived certificate from Fulcio, so no key lives in the repo.
       id-token: write
     steps:
@@ -208,8 +208,8 @@ jobs:
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - uses: sigstore/cosign-installer@v3
 
