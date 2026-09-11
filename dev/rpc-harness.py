@@ -73,12 +73,31 @@ class Link:
 
         message = json.loads(payload.decode())
         kind_name = message.get("t")
+        if kind_name == "result":
+            self.name_blobs(message.get("blobs") or [])
         with self.lock:
             if kind_name == "result":
                 self.results[message["id"]] = message
             elif kind_name == "event":
                 self.events.append(message)
         print(f"<-- {json.dumps(message)[:1200]}", flush=True)
+
+    def name_blobs(self, blobs):
+        """A blob frame arrives before the result that says what it is, so rename it after."""
+        for blob in blobs:
+            with self.lock:
+                path = self.blobs.get(blob.get("id"))
+            if path is None:
+                continue
+            suffix = {"image/png": ".png", "image/jpeg": ".jpg"}.get(blob.get("mime"))
+            if suffix is None:
+                continue
+            renamed = os.path.splitext(path)[0] + suffix
+            os.replace(path, renamed)
+            with self.lock:
+                self.blobs[blob["id"]] = renamed
+            print(f"<-- blob {blob['id']} is {blob.get('width')}x{blob.get('height')} -> {renamed}",
+                  flush=True)
 
     def wait_result(self, call_id, timeout):
         deadline = time.time() + timeout

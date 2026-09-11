@@ -1,0 +1,245 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ghcr.io/mc-agents/bot-fabric
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      # Stonecutter owns the version list, so the matrix comes from the build rather than from
+      # anything written here. Adding a Minecraft version stays two files.
+      versions: ${{ steps.versions.outputs.value }}
+      modVersion: ${{ steps.versions.outputs.modVersion }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The version check diffs against the commit this one replaced, which a shallow
+          # clone does not have.
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v4
+
+      - id: versions
+        run: |
+          echo "value=$(./gradlew -q printVersions | tail -1)" >> "$GITHUB_OUTPUT"
+          echo "modVersion=$(sed -n 's/^mod_version=//p' gradle.properties | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+
+      # On a pull request the base branch is the comparison; on a push it is the commit that was
+      # replaced. A force push leaves nothing to compare against - the commit it names is gone -
+      # and the first push to a branch names the all-zero sha, so only the consistency half runs
+      # in either case.
+      - name: version is consistent and was raised
+        env:
+          FORCED: ${{ github.event.forced }}
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          EMPTY_SHA: '0000000000000000000000000000000000000000'
+        run: |
+          if [ "$FORCED" = true ] || [ -z "$BASE" ] || [ "$BASE" = "$EMPTY_SHA" ]; then
+            bash hack/check-version.sh
+          else
+            bash hack/check-version.sh "$BASE"
+          fi
+
+      - run: ./gradlew buildAll
+
+      - name: collect the mod jars
+        run: |
+          set -eu
+          mkdir -p dist
+          for properties in versions/*/gradle.properties; do
+            project=$(basename "$(dirname "$properties")")
+            mkdir -p "dist/$project"
+            cp "versions/$project/build/libs/"*.jar "dist/$project/"
+          done
+          find dist -type f -name '*.jar' -print
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mod-jars
+          path: dist/
+          if-no-files-found: error
+
+  # The end to end check, and the reason a version bump is survivable: it joins a real Paper
+  # server, draws a frame and presses a dialog button. Slow enough to keep out of `check`.
+  smoke:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.check.outputs.versions) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: mod-jars
+          path: dist-all
+
+      - id: properties
+        run: |
+          set -eu
+          properties=versions/${{ matrix.project }}/gradle.properties
+          echo "loader=$(sed -n 's/^loader_version=//p' "$properties" | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+          echo "api=$(sed -n 's/^fabric_api_version=//p' "$properties" | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+
+      - name: build the bot image
+        run: |
+          set -eu
+          mkdir -p dist
+          cp "dist-all/${{ matrix.project }}/"*.jar dist/
+          docker build \
+            --build-arg MINECRAFT_VERSION=${{ matrix.minecraft }} \
+            --build-arg LOADER_VERSION=${{ steps.properties.outputs.loader }} \
+            --build-arg FABRIC_API_VERSION=${{ steps.properties.outputs.api }} \
+            -t bot-fabric:ci .
+
+      # The dialog registry is only read when the world loads, so the datapack goes in after the
+      # first boot and the server restarts.
+      - name: start Paper
+        env:
+          MC_VERSION: ${{ matrix.minecraft }}
+        run: |
+          set -eu
+          wait_healthy() {
+            for _ in $(seq 1 90); do
+              status=$(docker inspect -f '{{.State.Health.Status}}' bot-fabric-dev-minecraft-1)
+              [ "$status" = healthy ] && return 0
+              sleep 10
+            done
+            docker compose -f dev/compose.yml logs --tail 50
+            return 1
+          }
+          docker compose -f dev/compose.yml up -d
+          wait_healthy
+          docker cp dev/datapack/botcheck bot-fabric-dev-minecraft-1:/data/world/datapacks/botcheck
+          docker compose -f dev/compose.yml restart
+          wait_healthy
+          docker exec bot-fabric-dev-minecraft-1 rcon-cli "datapack list enabled"
+
+      - name: join, draw a frame, press a dialog button
+        run: |
+          set -eu
+          mkdir -p dev/out
+          timeout 900 python3 dev/rpc-harness.py dev/ci-smoke.txt --port 8765 --out dev/out &
+          harness=$!
+          docker run -d --name bot \
+            --add-host host.docker.internal:host-gateway \
+            -e MCAGENTS_RPC_HOST=host.docker.internal \
+            -e MCAGENTS_RPC_PORT=8765 \
+            bot-fabric:ci
+          wait "$harness"
+
+      - name: what the bot saw
+        if: always()
+        run: docker logs bot 2>&1 | tail -100 || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-mc${{ matrix.minecraft }}
+          path: dev/out/
+          if-no-files-found: warn
+
+  publish:
+    needs: [check, smoke]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.check.outputs.versions) }}
+    permissions:
+      contents: read
+      # ghcr.io accepts GITHUB_TOKEN, so no registry secret has to exist anywhere.
+      packages: write
+      # Lets cosign fetch a short-lived certificate from Fulcio, so no key lives in the repo.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: mod-jars
+          path: dist-all
+
+      - name: stage the jar for this Minecraft version
+        run: |
+          set -eu
+          mkdir -p dist
+          cp "dist-all/${{ matrix.project }}/"*.jar dist/
+          ls -l dist
+
+      # The operator composes a fabric bot's image as <tag>-mc<minecraftVersion>, so every tag
+      # published here has to carry the suffix: see operator internal/botimage/resolver.go.
+      - id: tag
+        env:
+          VERSION: ${{ needs.check.outputs.modVersion }}
+          MINECRAFT: ${{ matrix.minecraft }}
+        run: |
+          set -eu
+          stamp=$(date -u +%Y%m%d%H%M%S)
+          sha=$(git rev-parse --short=8 HEAD)
+          case "$VERSION" in *-*) sep=. ;; *) sep=- ;; esac
+          echo "release=${VERSION}-mc${MINECRAFT}" >> "$GITHUB_OUTPUT"
+          echo "immutable=${VERSION}${sep}${stamp}.g${sha}-mc${MINECRAFT}" >> "$GITHUB_OUTPUT"
+          echo "moving=latest-mc${MINECRAFT}" >> "$GITHUB_OUTPUT"
+
+      - id: loader
+        run: echo "value=$(sed -n 's/^loader_version=//p' versions/${{ matrix.project }}/gradle.properties | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: sigstore/cosign-installer@v3
+
+      # amd64 only, and not by preference: Mojang's manifest has no linux-arm64 LWJGL natives
+      # for 26.x, so an arm64 image would need LWJGL's own builds substituted in.
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          provenance: mode=max
+          sbom: true
+          build-args: |
+            MINECRAFT_VERSION=${{ matrix.minecraft }}
+            LOADER_VERSION=${{ steps.loader.outputs.value }}
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.tag.outputs.release }}
+            ${{ env.IMAGE }}:${{ steps.tag.outputs.immutable }}
+            ${{ env.IMAGE }}:${{ steps.tag.outputs.moving }}
+          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache-mc${{ matrix.minecraft }}
+          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache-mc${{ matrix.minecraft }},mode=max,image-manifest=true,oci-mediatypes=true
+
+      - name: sign image
+        run: cosign sign --yes "${{ env.IMAGE }}@${{ steps.build.outputs.digest }}"
+
+      - run: |
+          {
+            echo "published \`${{ env.IMAGE }}:${{ steps.tag.outputs.release }}\` for Minecraft ${{ matrix.minecraft }}"
+            echo ""
+            echo "verify:"
+            echo '```'
+            echo "cosign verify ${{ env.IMAGE }}:${{ steps.tag.outputs.release }} \\"
+            echo "  --certificate-identity-regexp '^https://github.com/${{ github.repository }}/' \\"
+            echo "  --certificate-oidc-issuer https://token.actions.githubusercontent.com"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
