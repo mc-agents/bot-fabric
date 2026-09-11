@@ -85,3 +85,15 @@ A desktop `runClient` has a focused window, and whatever the person at the keybo
 into the game — a stray `/` opens the chat screen and every screen-reading tool then sees
 `ChatScreen`. The tick handler closes a chat screen the bot did not open. Headless under Xvfb
 there is no keyboard at all, which is the other reason headless is the default.
+
+## A dev launch is not a real launch
+
+Loom puts Fabric API on the classpath; a launched client wants it as a jar in `<gameDir>/mods`,
+and loader refuses to start without it — `HARD_DEP_NO_CANDIDATE botfabric {depends fabric-api}`.
+It then tries to report that in a Swing window, which in a container fails on
+`libXtst.so.6` and buries the real error under an `UnsatisfiedLinkError`. The image runs with
+`-Djava.awt.headless=true` and installs `libxtst6` anyway.
+
+`xvfb-run` as PID 1 starts Xvfb and then never runs its command — no output, no java, a container
+that sits there. The entrypoint starts `Xvfb` itself and `exec`s java, which also means signals
+reach the client.

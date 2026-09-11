@@ -146,11 +146,9 @@ Text crosses the wire as segments — `{text, font?, color?}` — with the font 
 which font a piece of HUD is drawn in is game knowledge and joining it into a display string is
 the server's job.
 
-### A gap in the contract
-
-`bot-protocol.md` names `result.blobs[]` but not what is in an entry. This bot sends
-`{id, mime, name, bytes}`, with the blob frame carrying the same uuid, and the blob frames go
-out before the result as invariant 4 requires. It needs to be settled in the protocol doc.
+A `result.blobs[]` entry is `{id, mime, bytes}` with `name`, `width` and `height` added for an
+image, and the blob frames go out before the result that names them, as invariant 4 requires.
+A screenshot reports its own dimensions rather than making the server parse a PNG header.
 
 ## Building and running
 
@@ -200,6 +198,30 @@ at that keyboard goes into the game, which is its own source of confusion.
 `dev/README.md` covers the Paper server, the datapack the dialog checks need, and the harness
 script format.
 
+### The bot image
+
+```sh
+./gradlew build
+mkdir -p dist && cp versions/26.1.2/build/libs/*.jar dist/
+docker build --platform linux/amd64 \
+    --build-arg MINECRAFT_VERSION=26.1.2 \
+    --build-arg LOADER_VERSION=0.19.5 \
+    --build-arg FABRIC_API_VERSION=0.155.3+26.1.2 \
+    -t bot-fabric:dev .
+docker run --rm -v bot-fabric-mc:/mc -e MCAGENTS_RPC_HOST=... bot-fabric:dev
+```
+
+The image carries the mod, Fabric API, Fabric loader and a virtual X server — **not Minecraft**.
+`docker/fetch-minecraft.py` fills `/mc` from Mojang's version manifest: the client jar, the
+libraries this platform's rules select, the asset objects, and Fabric's loader libraries, leaving
+a `launch.json` that names the classpath and the main class. Run it as an init container against
+a shared volume, or let the entrypoint do it when the volume it finds is empty.
+
+CI publishes one image per Minecraft version, tagged the way the operator composes a reference —
+`bot-fabric:<mod version>-mc<minecraft version>`, plus an immutable
+`<version>-<timestamp>.g<sha>-mc<minecraft>` and a moving `latest-mc<minecraft>`. The version
+matrix comes from `./gradlew printVersions`, so adding a version does not touch the workflow.
+
 ### Configuration
 
 | variable | default | |
@@ -224,8 +246,8 @@ set them: `./gradlew runClient -Prpc.port=8766`.
 - **No `linux-arm64` LWJGL natives exist for 26.1.2.** Mojang ships `linux` (x86_64), `macos`,
   `macos-arm64`, `windows`, `windows-arm64` and `windows-x86`. An ARM bot image has to
   substitute LWJGL's own arm64 builds; everything here ran `linux/amd64`.
-- **The client jar is not in any image.** Loom fetches it from Mojang at build time; the eventual
-  bot image has to do the same in an init container.
+- **The client jar is not in any image.** `docker/fetch-minecraft.py` fetches it from Mojang's
+  manifest into a cache volume, as an init container or on first start.
 - **One bot per process.** `Minecraft.getInstance()`, `RenderSystem` and GLFW are all JVM-global.
 - **Yarn does not exist for 26.x.** Mojang mappings, no remapping; see `docs/notes.md`.
 

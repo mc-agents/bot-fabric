@@ -34,7 +34,12 @@ python3 dev/rpc-harness.py dev/smoke.txt --port 8766
 
 No dependencies. It is how you drive the bot without `mcp-server`.
 
-## Headless client
+## Headless client from the image
+
+The published image is the real thing and needs no Gradle; see the README. `dev/ci-smoke.txt` is
+the script CI runs against it.
+
+## Headless client from a Gradle run
 
 ```sh
 docker build --platform linux/amd64 -f dev/Dockerfile.headless -t bot-fabric-headless dev
