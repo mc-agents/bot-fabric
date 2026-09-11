@@ -1,6 +1,6 @@
 {
   "required": true,
-  "package": "net.mcagents.botfabric.mixin",
+  "package": "kr.junhyung.mcagents.botfabric.mixin",
   "compatibilityLevel": "JAVA_${java}",
   "client": [
     "FramerateLimitTrackerMixin",

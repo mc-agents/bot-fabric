@@ -11,7 +11,7 @@
   "license": "MIT",
   "environment": "client",
   "entrypoints": {
-    "client": ["net.mcagents.botfabric.BotFabricClient"]
+    "client": ["kr.junhyung.mcagents.botfabric.BotFabricClient"]
   },
   "mixins": ["${id}.mixins.json"],
   "depends": {
