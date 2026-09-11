@@ -37,6 +37,9 @@ RUN test -n "${FABRIC_API_VERSION}" || { echo "FABRIC_API_VERSION build arg is r
       -o "/opt/bot-fabric/mods/fabric-api-${FABRIC_API_VERSION}.jar" \
       "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/${FABRIC_API_VERSION}/fabric-api-${FABRIC_API_VERSION}.jar"
 
-USER bot
+# Numeric, not a name. Kubernetes refuses to start a container under runAsNonRoot when the
+# image's user is a name it cannot resolve, and the pod sits in CreateContainerConfigError
+# saying so -- which is where an operator-built bot pod ended up the first time one ran.
+USER 10001
 WORKDIR /data
 ENTRYPOINT ["/opt/bot-fabric/entrypoint.sh"]
