@@ -8,6 +8,7 @@ import kr.junhyung.mcagents.botfabric.rpc.CallContext;
 import kr.junhyung.mcagents.botfabric.task.Task;
 import kr.junhyung.mcagents.botfabric.task.TaskScheduler;
 import kr.junhyung.mcagents.botfabric.tool.Args;
+import kr.junhyung.mcagents.botfabric.tool.CatalogHashes;
 import kr.junhyung.mcagents.botfabric.tool.Tool;
 
 import java.util.List;
@@ -28,7 +29,7 @@ public final class RunCommandTool implements Tool {
 
     @Override
     public String argsHash() {
-        return "sha256:b1a77f445106644a745cf0e35390a277802d4df8b08764e053bd18e0d26ca827";
+        return CatalogHashes.of(name());
     }
 
     @Override

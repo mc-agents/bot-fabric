@@ -9,6 +9,7 @@ import kr.junhyung.mcagents.botfabric.rpc.CallContext;
 import kr.junhyung.mcagents.botfabric.task.Task;
 import kr.junhyung.mcagents.botfabric.task.TaskScheduler;
 import kr.junhyung.mcagents.botfabric.tool.Args;
+import kr.junhyung.mcagents.botfabric.tool.CatalogHashes;
 import kr.junhyung.mcagents.botfabric.tool.Tool;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import net.minecraft.client.Minecraft;
@@ -35,7 +36,7 @@ public final class ScreenshotTool implements Tool {
 
     @Override
     public String argsHash() {
-        return "sha256:14c6fbf3f34294fb5f822199cd97c9a6347985795cb30a13949cc53646b9b26f";
+        return CatalogHashes.of(name());
     }
 
     @Override

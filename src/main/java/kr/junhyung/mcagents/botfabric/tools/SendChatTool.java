@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.Mc;
 import kr.junhyung.mcagents.botfabric.rpc.CallContext;
 import kr.junhyung.mcagents.botfabric.tool.Args;
+import kr.junhyung.mcagents.botfabric.tool.CatalogHashes;
 import kr.junhyung.mcagents.botfabric.tool.Tool;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 
@@ -15,7 +16,7 @@ public final class SendChatTool implements Tool {
 
     @Override
     public String argsHash() {
-        return "sha256:5c7dd5f9ce17e6ef4722a41c75a474b6dddbbccab91d61afb2ada4ef8ff46829";
+        return CatalogHashes.of(name());
     }
 
     @Override

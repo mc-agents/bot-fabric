@@ -3,6 +3,7 @@ package kr.junhyung.mcagents.botfabric.tools;
 import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.Mc;
 import kr.junhyung.mcagents.botfabric.rpc.CallContext;
+import kr.junhyung.mcagents.botfabric.tool.CatalogHashes;
 import kr.junhyung.mcagents.botfabric.tool.Tool;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -15,7 +16,7 @@ public final class GetPositionTool implements Tool {
 
     @Override
     public String argsHash() {
-        return "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f";
+        return CatalogHashes.of(name());
     }
 
     @Override

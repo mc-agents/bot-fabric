@@ -52,6 +52,13 @@ jobs:
             bash hack/check-version.sh "$BASE"
           fi
 
+      # CatalogHashes.java is generated from mcp-server's catalogue and committed, so that a
+      # catalogue change shows up as a diff to review rather than as tools quietly going dark at
+      # the next handshake. This only checks that it is internally consistent; whether it matches
+      # the current catalogue is what the diff in a pull request is for.
+      - name: the catalogue hashes are readable
+        run: python3 -c "import re,pathlib; t=pathlib.Path('src/main/java/kr/junhyung/mcagents/botfabric/tool/CatalogHashes.java').read_text(); n=len(re.findall(r'entry\(\"', t)); print(n, 'tools'); raise SystemExit(0 if n > 0 else 1)"
+
       - run: ./gradlew buildAll
 
       # By version, not by glob. build/libs keeps every jar it has ever produced, so on a tree

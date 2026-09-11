@@ -6,6 +6,7 @@ import kr.junhyung.mcagents.botfabric.rpc.CallContext;
 import kr.junhyung.mcagents.botfabric.task.Task;
 import kr.junhyung.mcagents.botfabric.task.TaskScheduler;
 import kr.junhyung.mcagents.botfabric.tool.Args;
+import kr.junhyung.mcagents.botfabric.tool.CatalogHashes;
 import kr.junhyung.mcagents.botfabric.tool.Tool;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import net.minecraft.client.gui.components.AbstractButton;
@@ -38,7 +39,7 @@ public final class PressDialogButtonTool implements Tool {
 
     @Override
     public String argsHash() {
-        return "sha256:1010547a2695089153ad40d50abaa241830dddac1a875129be6cb7b41961789a";
+        return CatalogHashes.of(name());
     }
 
     @Override

@@ -5,6 +5,7 @@ import kr.junhyung.mcagents.botfabric.rpc.CallContext;
 import kr.junhyung.mcagents.botfabric.task.Task;
 import kr.junhyung.mcagents.botfabric.task.TaskScheduler;
 import kr.junhyung.mcagents.botfabric.tool.Args;
+import kr.junhyung.mcagents.botfabric.tool.CatalogHashes;
 import kr.junhyung.mcagents.botfabric.tool.Tool;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 
@@ -22,7 +23,7 @@ public final class WaitTicksTool implements Tool {
 
     @Override
     public String argsHash() {
-        return "sha256:b2835c343bcf281db2c56d1f1b5c3a25624f0d7d0ce68425286991b7d70d55ec";
+        return CatalogHashes.of(name());
     }
 
     @Override

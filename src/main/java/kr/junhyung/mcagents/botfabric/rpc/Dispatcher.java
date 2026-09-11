@@ -85,7 +85,13 @@ public final class Dispatcher {
             case "disconnect" -> onDisconnect(client, message);
             case "shutdown" -> onShutdown(message);
             case "ping" -> onPing(client, message);
-            case "configure" -> LOGGER.debug("configure ignored: {}", message);
+            /*
+            A breach of the wire contract, not a failed call. The link closes behind it, so there
+            is nothing to answer -- but reconnecting and sending the same thing again is what a
+            bot does when it does not read this, and the code is the only clue anybody gets.
+            */
+            case "fault" -> LOGGER.error("mcp-server closed the link on a protocol fault: {} {}",
+                    Json.string(message, "code", "?"), Json.string(message, "message", ""));
             default -> LOGGER.warn("unknown message type: {}", type);
         }
     }
@@ -175,9 +181,10 @@ public final class Dispatcher {
     private void onPing(RpcClient client, JsonObject message) {
         JsonObject pong = new JsonObject();
         pong.addProperty("t", "pong");
-        pong.addProperty("nonce", Json.string(message, "nonce", ""));
+        /* The nonce is a number the server allocated, and busy is how many calls are in flight. */
+        pong.addProperty("nonce", Json.number(message, "nonce", 0L));
         pong.addProperty("ts", System.currentTimeMillis());
-        pong.addProperty("busy", !inFlight.isEmpty());
+        pong.addProperty("busy", inFlight.size());
         client.send(pong);
     }
 
