@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "${id}",
+  "version": "${version}",
+  "name": "${name}",
+  "description": "A Minecraft client driven over the mc-agents bot RPC protocol.",
+  "authors": ["mc-agents"],
+  "contact": {
+    "sources": "https://github.com/mc-agents/bot-fabric"
+  },
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["net.mcagents.botfabric.BotFabricClient"]
+  },
+  "mixins": ["${id}.mixins.json"],
+  "depends": {
+    "fabricloader": ">=${loader}",
+    "minecraft": "${minecraft}",
+    "java": ">=${java}",
+    "fabric-api": "*"
+  }
+}

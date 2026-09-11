@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "net.mcagents.botfabric.mixin",
+  "compatibilityLevel": "JAVA_${java}",
+  "client": [
+    "FramerateLimitTrackerMixin",
+    "MinecraftAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
