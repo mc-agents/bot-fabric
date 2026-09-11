@@ -25,16 +25,21 @@ public final class GetPositionTool implements Tool {
             LocalPlayer player = Mc.requirePlayer();
             BlockPos block = player.blockPosition();
 
+            /*
+            The shape is the catalogue's resultSchema and not this class's. It used to send x, y
+            and z at the top level, so mcp-server's renderer -- which reads "position" -- answered
+            "Position: null" about a bot that was standing somewhere perfectly definite.
+
+            The block the player is in, floored. Which block an entity occupies is game knowledge,
+            and truncating a negative coordinate towards zero names the block next door.
+            */
+            JsonObject position = new JsonObject();
+            position.addProperty("x", block.getX());
+            position.addProperty("y", block.getY());
+            position.addProperty("z", block.getZ());
+
             JsonObject data = new JsonObject();
-            data.addProperty("x", block.getX());
-            data.addProperty("y", block.getY());
-            data.addProperty("z", block.getZ());
-            data.addProperty("exactX", player.getX());
-            data.addProperty("exactY", player.getY());
-            data.addProperty("exactZ", player.getZ());
-            data.addProperty("yaw", player.getYRot());
-            data.addProperty("pitch", player.getXRot());
-            data.addProperty("dimension", player.level().dimension().identifier().toString());
+            data.add("position", position);
 
             call.ok("standing at %d, %d, %d in %s"
                     .formatted(block.getX(), block.getY(), block.getZ(),
