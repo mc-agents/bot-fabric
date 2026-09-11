@@ -25,8 +25,8 @@ permission (`/help`), one that does (`/say ...`), and one `dynamic/custom` actio
 ## The RPC harness
 
 `rpc-harness.py` listens on `:8765`, answers `hello` with `helloOk`, then runs a script of
-`connect` / `call` / `press` lines and prints every frame it gets back. Blobs land in `dev/out/`
-as `<uuid>.bin` — a screenshot is a PNG under that name.
+`connect` / `call` / `press` lines and prints every frame it gets back. Blobs land in `dev/out/`,
+renamed by the mime type the result gives them, so a screenshot is `<uuid>.png`.
 
 ```sh
 python3 dev/rpc-harness.py dev/smoke.txt --port 8766

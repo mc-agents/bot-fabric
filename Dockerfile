@@ -32,7 +32,8 @@ COPY dist/ /opt/bot-fabric/mods/
 
 # Loom puts Fabric API on the classpath in a dev run; a real launch wants it as a mod. It is
 # Apache-2.0, so unlike the client jar it can live in the image.
-RUN curl -fsSL --retry 3 \
+RUN test -n "${FABRIC_API_VERSION}" || { echo "FABRIC_API_VERSION build arg is required" >&2; exit 1; } \
+ && curl -fsSL --retry 3 --connect-timeout 20 --max-time 300 \
       -o "/opt/bot-fabric/mods/fabric-api-${FABRIC_API_VERSION}.jar" \
       "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/${FABRIC_API_VERSION}/fabric-api-${FABRIC_API_VERSION}.jar"
 

@@ -189,7 +189,9 @@ docker run --rm --platform linux/amd64 \
     bot-fabric-headless dev/run-headless.sh
 ```
 
-Screenshots land in `dev/out/<uuid>.bin` as PNG files; open them to judge anything visual.
+Screenshots land in `dev/out/<uuid>.png`; open them to judge anything visual. That loop runs the
+mod out of the build directory, which is what you want while changing it — the image below is
+what runs anywhere else.
 
 `./gradlew runClient` opens a client with a window on the desktop. It is for looking at
 something with your own eyes, not the normal loop — and a focused window means whatever is typed

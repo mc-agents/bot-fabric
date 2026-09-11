@@ -21,14 +21,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BotFabricClient implements ClientModInitializer {
-    public static final String AGENT_VERSION = "0.1.0";
     public static final String CATALOG_VERSION = "1.0.0";
-    public static final String MINECRAFT_VERSION = FabricLoader.getInstance()
-            .getModContainer("minecraft")
-            .map(container -> container.getMetadata().getVersion().getFriendlyString())
-            .orElse("unknown");
+    public static final String AGENT_VERSION = versionOf("botfabric");
+    public static final String MINECRAFT_VERSION = versionOf("minecraft");
 
     private static final Logger LOGGER = LoggerFactory.getLogger("botfabric");
+
+    private static String versionOf(String modId) {
+        return FabricLoader.getInstance()
+                .getModContainer(modId)
+                .map(container -> container.getMetadata().getVersion().getFriendlyString())
+                .orElse("unknown");
+    }
 
     @Override
     public void onInitializeClient() {
