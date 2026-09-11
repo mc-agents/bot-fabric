@@ -1,0 +1,26 @@
+# Fills a cache volume with a Minecraft client, so a bot image does not have to carry one.
+#
+# The same fetch-minecraft.py the bot image runs, which is the point: the layout it writes and the
+# layout the bot reads cannot drift apart while there is one copy of the script.
+FROM python:3.14-slim
+
+ARG MINECRAFT_VERSION
+ARG LOADER_VERSION
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates \
+ && rm -rf /var/lib/apt/lists/* \
+ && useradd --create-home --uid 10001 assets \
+ && mkdir -p /mc \
+ && chown assets:assets /mc
+
+COPY docker/fetch-minecraft.py docker/assets-entrypoint.sh /opt/mc-assets/
+
+ENV BOT_FABRIC_MINECRAFT=${MINECRAFT_VERSION} \
+    BOT_FABRIC_LOADER=${LOADER_VERSION} \
+    MC_ASSETS_DIR=/mc
+
+# Numeric, not a name: Kubernetes refuses a container under runAsNonRoot whose image user it
+# cannot resolve to a number.
+USER 10001
+ENTRYPOINT ["/opt/mc-assets/assets-entrypoint.sh"]

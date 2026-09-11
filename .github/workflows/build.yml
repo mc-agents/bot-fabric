@@ -9,6 +9,7 @@ on:
 env:
   REGISTRY: junhyung.cloud
   IMAGE: junhyung.cloud/library/bot-fabric
+  ASSETS_IMAGE: junhyung.cloud/library/mc-assets
 
 jobs:
   check:
@@ -237,9 +238,33 @@ jobs:
       - name: sign image
         run: cosign sign --yes "${{ env.IMAGE }}@${{ steps.build.outputs.digest }}"
 
+      # The asset fetcher, from the same script the bot runs. A bot image cannot carry the client
+      # jar -- it is Mojang's to distribute -- so something has to fill the cache it mounts, and
+      # keeping one copy of the script is what stops the layout it writes from drifting from the
+      # layout the bot reads.
+      - id: assets
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.assets
+          platforms: linux/amd64
+          push: true
+          provenance: mode=max
+          sbom: true
+          build-args: |
+            MINECRAFT_VERSION=${{ matrix.minecraft }}
+            LOADER_VERSION=${{ steps.properties.outputs.loader }}
+          tags: |
+            ${{ env.ASSETS_IMAGE }}:${{ steps.tag.outputs.release }}
+            ${{ env.ASSETS_IMAGE }}:${{ steps.tag.outputs.immutable }}
+            ${{ env.ASSETS_IMAGE }}:${{ steps.tag.outputs.moving }}
+
+      - name: sign assets image
+        run: cosign sign --yes "${{ env.ASSETS_IMAGE }}@${{ steps.assets.outputs.digest }}"
+
       - run: |
           {
-            echo "published \`${{ env.IMAGE }}:${{ steps.tag.outputs.release }}\` for Minecraft ${{ matrix.minecraft }}"
+            echo "published \`${{ env.IMAGE }}:${{ steps.tag.outputs.release }}\` and \`${{ env.ASSETS_IMAGE }}:${{ steps.tag.outputs.release }}\` for Minecraft ${{ matrix.minecraft }}"
             echo ""
             echo "verify:"
             echo '```'
