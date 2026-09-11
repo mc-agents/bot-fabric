@@ -12,7 +12,14 @@ dependencies {
     minecraft("com.mojang:minecraft:${stonecutter.current.version}")
     implementation("net.fabricmc:fabric-loader:${property("loader_version")}")
     implementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_api_version")}")
+
+    testImplementation(platform("org.junit:junit-bom:6.0.1"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
+
+/* The pieces that are ours and not Minecraft's are testable without a client. */
+tasks.test { useJUnitPlatform() }
 
 loom {
     runConfigs.all {
@@ -23,10 +30,11 @@ loom {
     runConfigs.named("client") {
         val botName = providers.gradleProperty("bot.name").orElse("fabric_bot")
         programArguments.addAll(providers.provider { listOf("--username", botName.get()) })
-        systemProperties.put("mcagents.rpc.host", providers.gradleProperty("rpc.host").orElse("127.0.0.1"))
-        systemProperties.put("mcagents.rpc.port", providers.gradleProperty("rpc.port").orElse("8765"))
-        systemProperties.put("mcagents.rpc.enabled", providers.gradleProperty("rpc.enabled").orElse("true"))
-        systemProperties.put("mcagents.bot.name", botName)
+        /* BotConfig reads an environment name lowercased with dots, so these track those names. */
+        systemProperties.put("mcp.server.host", providers.gradleProperty("rpc.host").orElse("127.0.0.1"))
+        systemProperties.put("mcp.server.port", providers.gradleProperty("rpc.port").orElse("8765"))
+        systemProperties.put("bot.rpc.enabled", providers.gradleProperty("rpc.enabled").orElse("true"))
+        systemProperties.put("bot.name", botName)
     }
 }
 

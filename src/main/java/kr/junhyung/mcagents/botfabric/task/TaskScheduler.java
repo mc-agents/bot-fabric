@@ -11,10 +11,20 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ * Runs the tasks that take more than one tick, on the client thread and nowhere else.
+ *
+ * <p>{@code running} belongs to that thread. Everything another thread wants to do to it arrives
+ * as a queue the tick drains, because a list touched from two threads is the whole reason this
+ * class exists: the RPC reader calling {@link #abortAll} while the render thread was iterating
+ * took the client down with a ConcurrentModificationException, and a dropped link is exactly when
+ * that happens.
+ */
 public final class TaskScheduler {
     private static final Logger LOGGER = LoggerFactory.getLogger("botfabric/task");
 
     private final Queue<Running> incoming = new ConcurrentLinkedQueue<>();
+    private final Queue<String> aborts = new ConcurrentLinkedQueue<>();
     private final List<Running> running = new ArrayList<>();
 
     public void submit(Task task, CallContext call) {
@@ -31,6 +41,15 @@ public final class TaskScheduler {
             running.add(queued);
         }
 
+        String reason = aborts.poll();
+        if (reason != null) {
+            while (aborts.poll() != null) {
+                // One abort settles everything; the rest are the same event arriving again.
+            }
+            abort(reason);
+            return;
+        }
+
         Iterator<Running> iterator = running.iterator();
         while (iterator.hasNext()) {
             Running entry = iterator.next();
@@ -41,7 +60,16 @@ public final class TaskScheduler {
         }
     }
 
+    /**
+     * Fail everything in flight, from any thread. The work happens on the next tick: a caller here
+     * is usually the RPC reader noticing the link went, and it must not touch what the client
+     * thread is iterating.
+     */
     public void abortAll(String reason) {
+        aborts.add(reason);
+    }
+
+    private void abort(String reason) {
         Running queued;
         while ((queued = incoming.poll()) != null) {
             running.add(queued);
