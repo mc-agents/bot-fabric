@@ -4,6 +4,11 @@ plugins {
 
 stonecutter active "26.1.2"
 
+tasks.register("buildAll") {
+    group = "build"
+    dependsOn(stonecutter.tasks.named("build").map { it.values })
+}
+
 stonecutter parameters {
     swaps["mod_version"] = "\"${property("mod_version")}\";"
     swaps["minecraft"] = "\"${node.metadata.version}\";"

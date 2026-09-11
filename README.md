@@ -157,8 +157,8 @@ out before the result as invariant 4 requires. It needs to be settled in the pro
 Java 25. Everything goes through Stonecutter, so tasks are per-version.
 
 ```sh
-./gradlew build            # active version, currently 26.1.2
-./gradlew "Any:build"      # every version
+./gradlew build       # the active version, currently 26.1.2
+./gradlew buildAll    # every version
 ```
 
 ### Adding a Minecraft version
