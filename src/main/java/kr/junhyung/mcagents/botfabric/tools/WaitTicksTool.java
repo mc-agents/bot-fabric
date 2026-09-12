@@ -53,7 +53,7 @@ public final class WaitTicksTool implements Tool {
             if (++elapsed < ticks) {
                 return false;
             }
-            call.ok("waited " + ticks + " ticks");
+            call.ok("Waited " + ticks + " tick(s).");
             return true;
         }
     }

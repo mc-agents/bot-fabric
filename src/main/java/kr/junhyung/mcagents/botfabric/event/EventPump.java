@@ -6,18 +6,19 @@ import kr.junhyung.mcagents.botfabric.rpc.RpcClient;
 import kr.junhyung.mcagents.botfabric.text.Segments;
 import net.minecraft.network.chat.Component;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Every feed the bot sees, pushed as it arrives.
+ *
+ * <p>Nothing is kept here. The ring buffer a caller reads is mcp-server's, and it is the server that
+ * decides what counts as arriving after a command was sent. A second buffer on this side used to
+ * exist for run-command, which made the caller read the server's reply twice.
+ */
 public final class EventPump {
-    private static final int RING = 200;
 
     private final RpcClient client;
     private final AtomicLong seq = new AtomicLong();
-    private final Deque<Line> recent = new ArrayDeque<>();
 
     public EventPump(RpcClient client) {
         this.client = client;
@@ -33,42 +34,16 @@ public final class EventPump {
         Feeds.listen(this);
     }
 
-    public long mark() {
-        synchronized (recent) {
-            return recent.isEmpty() ? 0 : recent.peekLast().seq();
-        }
-    }
-
-    public List<String> since(long mark) {
-        List<String> lines = new ArrayList<>();
-        synchronized (recent) {
-            for (Line line : recent) {
-                if (line.seq() > mark) {
-                    lines.add(line.text());
-                }
-            }
-        }
-        return lines;
-    }
-
     public void emit(String kind, String source, Component message) {
         long id = seq.incrementAndGet();
         long now = System.currentTimeMillis();
-        String text = message.getString();
-
-        synchronized (recent) {
-            recent.addLast(new Line(id, text));
-            while (recent.size() > RING) {
-                recent.removeFirst();
-            }
-        }
 
         JsonObject event = new JsonObject();
         event.addProperty("t", "event");
         event.addProperty("seq", id);
         event.addProperty("kind", kind);
         event.addProperty("source", source);
-        event.addProperty("text", text);
+        event.addProperty("text", message.getString());
         /*
         Only the feeds a server draws with stacked glyphs. Chat is prose, and splitting it at every
         style change turns one sentence into a dozen fragments joined by separators.
@@ -81,8 +56,5 @@ public final class EventPump {
         event.addProperty("repeats", 1);
         event.addProperty("closed", true);
         client.send(event);
-    }
-
-    private record Line(long seq, String text) {
     }
 }

@@ -109,7 +109,7 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new WaitTicksTool(scheduler));
         tools.register(new ScreenshotTool(scheduler));
         tools.register(new PressDialogButtonTool(scheduler));
-        tools.register(new RunCommandTool(scheduler, events));
+        tools.register(new RunCommandTool());
 
         Dispatcher dispatcher = new Dispatcher(tools, scheduler, session, config.botName());
 
