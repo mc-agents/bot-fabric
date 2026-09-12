@@ -54,6 +54,7 @@ import kr.junhyung.mcagents.botfabric.tools.ReadWindowTool;
 import kr.junhyung.mcagents.botfabric.tools.RunCommandTool;
 import kr.junhyung.mcagents.botfabric.tools.ScreenshotTool;
 import kr.junhyung.mcagents.botfabric.tools.SendChatTool;
+import kr.junhyung.mcagents.botfabric.tools.SwitchServerTool;
 import kr.junhyung.mcagents.botfabric.tools.UseHeldItemTool;
 import kr.junhyung.mcagents.botfabric.tools.WaitForWindowTool;
 import kr.junhyung.mcagents.botfabric.tools.WaitTicksTool;
@@ -132,6 +133,7 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new CanCraftTool());
         tools.register(new GetRecipeTool());
         tools.register(new ListRecipesTool());
+        tools.register(new SwitchServerTool(scheduler));
         tools.register(new WaitTicksTool(scheduler));
         tools.register(new ScreenshotTool(scheduler));
         tools.register(new PressDialogButtonTool(scheduler));

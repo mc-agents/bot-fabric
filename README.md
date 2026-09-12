@@ -6,8 +6,8 @@ The contract both speak lives in [`mcp-server/docs/bot-protocol.md`](https://git
 and the plan it comes from is `mcp-server/docs/architecture.md`.
 
 This bot exists for the things a reimplementation of the client cannot do: **see the screen** and
-**press a dialog button**. Both are proved below. It now answers forty-two of the forty-six tools a
-bot is asked for, and says nothing about the rest, which is how the protocol expects a bot to grow.
+**press a dialog button**. Both are proved below. It answers every one of the forty-six tools a bot
+is asked for.
 
 ## What was proved
 
@@ -128,19 +128,12 @@ Chat, ticks, connection lifecycle and screens are all Fabric API.
 
 ## Tools
 
-Forty-two of the forty-six a fabric bot is asked for. The rest of the catalogue's sixty-four are
-answered by mcp-server from its own buffers and never reach a bot at all. What is not reported is
-not offered, and the protocol treats unreported and unimplemented the same way on purpose.
+All forty-six a fabric bot is asked for. The rest of the catalogue's sixty-four are answered by
+mcp-server from its own buffers and never reach a bot at all. What is not reported is not offered,
+and the protocol treats unreported and unimplemented the same way on purpose.
 
-The four not answered yet:
-
-| tool | why |
-| --- | --- |
-| `can-craft`, `get-recipe`, `list-recipes` | a client is told the recipes its book holds and no others, so a "no recipe" answer would be a lie about the server rather than a report of it. `craft-item` works because it can say so in its refusal |
-| `switch-server` | no proxy in the dev environment to write it against, and guessing at a proxy's replies is how the other bot ended up with the dialog problem |
-
-Everything else is here: reading the world and the HUD, walking, digging and placing, windows and
-slots, crafting and smelting, fishing, and the two this bot exists for.
+Reading the world and the HUD, walking, digging and placing, windows and slots, crafting and
+smelting, fishing, moving between backends, and the two this bot exists for.
 
 The ones worth naming:
 
@@ -151,6 +144,8 @@ The ones worth naming:
 | `craft-item` | the server places the recipe; the answer is what the inventory gained |
 | `fish` | the bite is the hook's own synced flag, not a splash somebody guessed at |
 | `move-to-position` | straight at the target, stepping up a block; a wall is reported, not waited out |
+| `can-craft`, `get-recipe`, `list-recipes` | the recipe book, and the DTO says so: a client is taught a recipe as the server unlocks it and never told the whole set |
+| `switch-server` | the player object being replaced is the arrival; the proxy's refusals only ever arrive as chat |
 
 Text crosses the wire as segments — `{text, font?, color?}` — with the font named, because
 which font a piece of HUD is drawn in is game knowledge and joining it into a display string is
@@ -249,9 +244,9 @@ set them: `./gradlew runClient -Prpc.port=8766`.
 
 ## Known limits
 
-- **Four tools are not answered.** The three recipe ones and `switch-server`, for the reasons in
-  the table above. Not reporting them is the honest answer, and the server never offers a caller a
-  tool no bot has claimed.
+- **The recipe tools answer about this bot.** A Minecraft client is sent a recipe as the server
+  unlocks it and is never told the whole set, so "no recipe" from here means "not taught to me".
+  The DTO carries `onlyWhatTheBotKnows` and mcp-server writes a sentence that says which.
 - **No pathfinding.** `move-to-position` walks straight at the target and steps up one block. It
   does not go around a wall, and says how far it got instead of waiting out its timeout. Baritone
   would mean an unofficial fork for 26.x, which is how the mineflayer problem started.

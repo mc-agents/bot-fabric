@@ -38,6 +38,11 @@ public final class EventPump {
         long id = seq.incrementAndGet();
         long now = System.currentTimeMillis();
 
+        /* A proxy answers a command in chat and nowhere else, so a task can ask to hear it. */
+        if (kind.equals("chat")) {
+            ChatWatch.heard(message.getString());
+        }
+
         JsonObject event = new JsonObject();
         event.addProperty("t", "event");
         event.addProperty("seq", id);
