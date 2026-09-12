@@ -8,6 +8,7 @@ import kr.junhyung.mcagents.botfabric.render.FrameBudget;
 import kr.junhyung.mcagents.botfabric.session.ConnectTask;
 import kr.junhyung.mcagents.botfabric.session.Session;
 import kr.junhyung.mcagents.botfabric.task.TaskScheduler;
+import kr.junhyung.mcagents.botfabric.tool.CatalogHashes;
 import kr.junhyung.mcagents.botfabric.tool.Tool;
 import kr.junhyung.mcagents.botfabric.tool.ToolError;
 import kr.junhyung.mcagents.botfabric.tool.ToolRegistry;
@@ -66,7 +67,7 @@ public final class Dispatcher {
         hello.addProperty("kind", "fabric");
         hello.addProperty("agentVersion", BotFabricClient.AGENT_VERSION);
         hello.addProperty("mcVersion", BotFabricClient.MINECRAFT_VERSION);
-        hello.addProperty("catalogVersion", BotFabricClient.CATALOG_VERSION);
+        hello.addProperty("catalogVersion", CatalogHashes.CATALOG_VERSION);
         hello.add("capabilities", capabilities);
         hello.add("features", Json.array("blob"));
         return hello;

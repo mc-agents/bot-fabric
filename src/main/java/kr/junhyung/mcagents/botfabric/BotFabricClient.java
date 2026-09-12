@@ -40,7 +40,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BotFabricClient implements ClientModInitializer {
-    public static final String CATALOG_VERSION = "1.0.0";
     public static final String AGENT_VERSION = versionOf("botfabric");
     public static final String MINECRAFT_VERSION = versionOf("minecraft");
 
