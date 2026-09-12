@@ -9,14 +9,16 @@ package kr.junhyung.mcagents.botfabric;
  * own loopback and waited there. {@code BOT_RPC_ENABLED} is not in the contract: it is this mod's,
  * for running the client by hand with nothing driving it.
  */
-public record BotConfig(String host, int port, String botName, long reconnectDelayMs, boolean enabled) {
+public record BotConfig(String host, int port, String botName, long reconnectDelayMs, boolean enabled,
+                        int healthPort) {
     public static BotConfig fromEnvironment() {
         String host = env("MCP_SERVER_HOST", "127.0.0.1");
         int port = Integer.parseInt(env("MCP_SERVER_PORT", "8765"));
         String name = env("BOT_NAME", "fabric_bot");
         long delay = Long.parseLong(env("RECONNECT_MIN_MS", "2000"));
         boolean enabled = !"false".equalsIgnoreCase(env("BOT_RPC_ENABLED", "true"));
-        return new BotConfig(host, port, name, delay, enabled);
+        int healthPort = Integer.parseInt(env("HEALTH_PORT", "8080"));
+        return new BotConfig(host, port, name, delay, enabled, healthPort);
     }
 
     private static String env(String key, String fallback) {

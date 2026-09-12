@@ -49,6 +49,9 @@ public class BotFabricClient implements ClientModInitializer {
 
         RpcClient client = new RpcClient(config);
         Session session = new Session(client);
+
+        /* Pod readiness is the link, and it is the only signal the operator has about one. */
+        HealthServer.start(config.healthPort(), client::linked);
         EventPump events = new EventPump(client);
 
         tools.register(new GetPositionTool());
