@@ -22,6 +22,7 @@ import kr.junhyung.mcagents.botfabric.tools.DigBlockTool;
 import kr.junhyung.mcagents.botfabric.tools.DropHeldItemTool;
 import kr.junhyung.mcagents.botfabric.tools.EquipItemTool;
 import kr.junhyung.mcagents.botfabric.tools.FindBlocksTool;
+import kr.junhyung.mcagents.botfabric.tools.FishTool;
 import kr.junhyung.mcagents.botfabric.tools.FindEntityTool;
 import kr.junhyung.mcagents.botfabric.tools.FindItemTool;
 import kr.junhyung.mcagents.botfabric.tools.FlyToTool;
@@ -124,6 +125,7 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new GiveItemTool());
         tools.register(new SmeltItemTool(scheduler));
         tools.register(new CraftItemTool(scheduler));
+        tools.register(new FishTool(scheduler));
         tools.register(new WaitTicksTool(scheduler));
         tools.register(new ScreenshotTool(scheduler));
         tools.register(new PressDialogButtonTool(scheduler));

@@ -5,6 +5,7 @@
   "client": [
     "BossHealthOverlayAccessor",
     "ClientPacketListenerMixin",
+    "FishingHookAccessor",
     "FramerateLimitTrackerMixin",
     "KeyboardInputMixin",
     "MinecraftAccessor"
