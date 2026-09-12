@@ -13,19 +13,35 @@ public final class Segments {
     private Segments() {
     }
 
+    /**
+     * The pieces a component is drawn from, with the glyphs taken out.
+     *
+     * <p>A server draws a HUD by stacking a bar glyph, a spacer, and a label. The glyphs are
+     * private use area codepoints that mean nothing as text, and a spacer with them removed holds
+     * whitespace and nothing else: it is a position on the screen rather than something to read,
+     * so it does not become a segment.
+     *
+     * <p>What is left is not trimmed. "Mana " and "Mana" are different pieces, and a server that
+     * writes a label and a number as two components puts the space in one of them.
+     */
     public static JsonArray of(Component component) {
         JsonArray segments = new JsonArray();
         if (component == null) {
             return segments;
         }
         component.visit((style, text) -> {
-            if (!text.isEmpty()) {
-                segments.add(segment(style, text));
+            String readable = GLYPHS.matcher(text).replaceAll("");
+            if (!readable.isBlank()) {
+                segments.add(segment(style, readable));
             }
             return Optional.empty();
         }, Style.EMPTY);
         return segments;
     }
+
+    /* The private use area, where a resource pack puts the glyphs it draws a HUD out of. */
+    private static final java.util.regex.Pattern GLYPHS =
+            java.util.regex.Pattern.compile("[\\uE000-\\uF8FF]|[\\uDB80-\\uDBBF][\\uDC00-\\uDFFF]");
 
     private static JsonObject segment(Style style, String text) {
         JsonObject segment = new JsonObject();

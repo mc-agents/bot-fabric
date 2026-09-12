@@ -28,6 +28,9 @@ public final class EventPump {
                 emit("chat", sender == null ? "system" : sender.name(), message));
         ClientReceiveMessageEvents.GAME.register((message, overlay) ->
                 emit(overlay ? "actionBar" : "chat", "system", message));
+
+        /* Titles, sounds and particles have no Fabric API event; a mixin hands them over here. */
+        Feeds.listen(this);
     }
 
     public long mark() {
@@ -48,7 +51,7 @@ public final class EventPump {
         return lines;
     }
 
-    private void emit(String kind, String source, Component message) {
+    public void emit(String kind, String source, Component message) {
         long id = seq.incrementAndGet();
         long now = System.currentTimeMillis();
         String text = message.getString();
@@ -66,7 +69,13 @@ public final class EventPump {
         event.addProperty("kind", kind);
         event.addProperty("source", source);
         event.addProperty("text", text);
-        event.add("segments", Segments.of(message));
+        /*
+        Only the feeds a server draws with stacked glyphs. Chat is prose, and splitting it at every
+        style change turns one sentence into a dozen fragments joined by separators.
+        */
+        if (kind.equals("actionBar") || kind.equals("title")) {
+            event.add("segments", Segments.of(message));
+        }
         event.addProperty("ts", now);
         event.addProperty("firstTs", now);
         event.addProperty("repeats", 1);
