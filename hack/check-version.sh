@@ -5,7 +5,9 @@
 # the wrong Fabric API, which compiles and then fails at runtime.
 #
 # Monotonicity: with a base revision given, mod_version must have gone up, because the published
-# image tag is built from it.
+# image tag is built from it -- but only when something that ends up in the image changed. A README
+# that told the truth about the tools was rejected for not bumping the mod, which teaches people to
+# bump it for nothing and makes the number mean less.
 set -o errexit -o nounset -o pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -43,6 +45,17 @@ for entry in json.loads(sys.argv[1]):
 base="${1:-}"
 if [[ -z "${base}" ]]; then
 	echo "version ${version} is consistent"
+	exit 0
+fi
+
+# What the image is built from. Docs, the dev harness and CI's own files are not in it.
+RELEASE_PATHS=(src/ versions/ docker/ gradle.properties build.gradle.kts settings.gradle.kts Dockerfile)
+
+changed="$(git -C "${ROOT}" diff --name-only "${base}" HEAD || true)"
+shipped="$(printf '%s\n' "${changed}" | grep -E "^($(IFS='|'; echo "${RELEASE_PATHS[*]}"))" || true)"
+
+if [[ -z "${shipped}" ]]; then
+	echo "version ${version} is consistent; nothing that ships changed"
 	exit 0
 fi
 
