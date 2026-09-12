@@ -55,6 +55,8 @@ public final class AttackEntityTool implements Tool {
         private final double maxDistance;
         private final int times;
 
+        private final Approach approach = new Approach();
+
         private Entity target;
         private String label;
         private int landed;
@@ -73,10 +75,8 @@ public final class AttackEntityTool implements Tool {
 
         @Override
         public void start(CallContext call) {
-            LocalPlayer player = Mc.requirePlayer();
-            target = Entities.require(player, query, maxDistance);
+            target = Entities.require(Mc.requirePlayer(), query, maxDistance);
             label = Entities.label(target);
-            Reach.require(player, target);
         }
 
         @Override
@@ -92,7 +92,12 @@ public final class AttackEntityTool implements Tool {
             }
 
             LocalPlayer player = Mc.requirePlayer();
-            Reach.require(player, target);
+
+            /* Before each swing, not once: a mob that backs off is followed rather than missed. */
+            if (!approach.reached(player, target)) {
+                return false;
+            }
+
             player.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
             Mc.client().gameMode.attack(player, target);
             player.swing(InteractionHand.MAIN_HAND);
@@ -104,6 +109,11 @@ public final class AttackEntityTool implements Tool {
             }
             waiting = INTERVAL_TICKS;
             return false;
+        }
+
+        @Override
+        public void cleanup(CallContext call) {
+            approach.stop();
         }
     }
 }

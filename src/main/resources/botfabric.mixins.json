@@ -6,6 +6,7 @@
     "BossHealthOverlayAccessor",
     "ClientPacketListenerMixin",
     "FramerateLimitTrackerMixin",
+    "KeyboardInputMixin",
     "MinecraftAccessor"
   ],
   "injectors": {

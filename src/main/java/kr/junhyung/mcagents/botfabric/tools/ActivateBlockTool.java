@@ -2,7 +2,11 @@ package kr.junhyung.mcagents.botfabric.tools;
 
 import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.Mc;
-import kr.junhyung.mcagents.botfabric.tool.ActionTool;
+import kr.junhyung.mcagents.botfabric.rpc.CallContext;
+import kr.junhyung.mcagents.botfabric.task.Task;
+import kr.junhyung.mcagents.botfabric.task.TaskScheduler;
+import kr.junhyung.mcagents.botfabric.tool.CatalogHashes;
+import kr.junhyung.mcagents.botfabric.tool.Tool;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
@@ -20,33 +24,74 @@ import net.minecraft.world.phys.Vec3;
  * open-container. Nothing is waited for here, because a lever has no window and waiting for one
  * would make every button press cost a timeout.
  */
-public final class ActivateBlockTool extends ActionTool {
+public final class ActivateBlockTool implements Tool {
 
-    public ActivateBlockTool() {
-        super("activate-block");
+    private final TaskScheduler scheduler;
+
+    public ActivateBlockTool(TaskScheduler scheduler) {
+        this.scheduler = scheduler;
     }
 
     @Override
-    protected String act(JsonObject args) {
-        BlockPos at = Positions.of(args);
-        LocalPlayer player = Mc.requirePlayer();
+    public String name() {
+        return "activate-block";
+    }
 
-        if (!player.level().isLoaded(at)) {
-            throw ToolException.refused("NOT_LOADED", Positions.point(at)
-                    + " is outside the loaded chunks, so there is no block to activate");
+    @Override
+    public String argsHash() {
+        return CatalogHashes.of(name());
+    }
+
+    @Override
+    public void invoke(CallContext call, JsonObject args) {
+        scheduler.submit(new ActivateTask(Positions.of(args)), call);
+    }
+
+    private static final class ActivateTask implements Task {
+        private final BlockPos at;
+        private final Approach approach = new Approach();
+
+        private ActivateTask(BlockPos at) {
+            this.at = at;
         }
 
-        Reach.require(player, at);
+        @Override
+        public String name() {
+            return "activate-block";
+        }
 
-        String block = BuiltInRegistries.BLOCK
-                .getKey(player.level().getBlockState(at).getBlock()).getPath();
-        Vec3 middle = Vec3.atCenterOf(at);
+        @Override
+        public void start(CallContext call) {
+            if (!Mc.requirePlayer().level().isLoaded(at)) {
+                throw ToolException.refused("NOT_LOADED", Positions.point(at)
+                        + " is outside the loaded chunks, so there is no block to activate");
+            }
+        }
 
-        player.lookAt(EntityAnchorArgument.Anchor.EYES, middle);
-        Mc.client().gameMode.useItemOn(player, InteractionHand.MAIN_HAND,
-                new BlockHitResult(middle, Direction.UP, at, false));
-        player.swing(InteractionHand.MAIN_HAND);
+        @Override
+        public boolean tick(CallContext call) {
+            LocalPlayer player = Mc.requirePlayer();
 
-        return "Right-clicked " + block + " at " + Positions.point(at) + ".";
+            if (!approach.reached(player, at)) {
+                return false;
+            }
+
+            String block = BuiltInRegistries.BLOCK
+                    .getKey(player.level().getBlockState(at).getBlock()).getPath();
+            Vec3 middle = Vec3.atCenterOf(at);
+
+            player.lookAt(EntityAnchorArgument.Anchor.EYES, middle);
+            Mc.client().gameMode.useItemOn(player, InteractionHand.MAIN_HAND,
+                    new BlockHitResult(middle, Direction.UP, at, false));
+            player.swing(InteractionHand.MAIN_HAND);
+
+            call.ok("Right-clicked " + block + " at " + Positions.point(at) + ".");
+            return true;
+        }
+
+        @Override
+        public void cleanup(CallContext call) {
+            approach.stop();
+        }
     }
 }

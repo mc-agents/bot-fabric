@@ -2,8 +2,12 @@ package kr.junhyung.mcagents.botfabric.tools;
 
 import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.Mc;
-import kr.junhyung.mcagents.botfabric.tool.ActionTool;
+import kr.junhyung.mcagents.botfabric.rpc.CallContext;
+import kr.junhyung.mcagents.botfabric.task.Task;
+import kr.junhyung.mcagents.botfabric.task.TaskScheduler;
 import kr.junhyung.mcagents.botfabric.tool.Args;
+import kr.junhyung.mcagents.botfabric.tool.CatalogHashes;
+import kr.junhyung.mcagents.botfabric.tool.Tool;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.world.InteractionHand;
@@ -18,27 +22,73 @@ import net.minecraft.world.phys.Vec3;
  * landed, and dereferences it without checking. Aiming at the eyes is where a player looking at an
  * NPC would click.
  */
-public final class InteractEntityTool extends ActionTool {
+public final class InteractEntityTool implements Tool {
 
-    public InteractEntityTool() {
-        super("interact-entity");
+    private final TaskScheduler scheduler;
+
+    public InteractEntityTool(TaskScheduler scheduler) {
+        this.scheduler = scheduler;
     }
 
     @Override
-    protected String act(JsonObject args) {
-        Args parsed = new Args(args);
-        LocalPlayer player = Mc.requirePlayer();
-        Entity target = Entities.require(player, parsed.string("name"),
-                args.get("maxDistance").getAsDouble());
+    public String name() {
+        return "interact-entity";
+    }
 
-        Reach.require(player, target);
+    @Override
+    public String argsHash() {
+        return CatalogHashes.of(name());
+    }
 
-        Vec3 eyes = target.getEyePosition();
-        player.lookAt(EntityAnchorArgument.Anchor.EYES, eyes);
-        Mc.client().gameMode.interact(player, target, new EntityHitResult(target, eyes),
-                InteractionHand.MAIN_HAND);
-        player.swing(InteractionHand.MAIN_HAND);
+    @Override
+    public void invoke(CallContext call, JsonObject args) {
+        scheduler.submit(new InteractTask(new Args(args).string("name"),
+                args.get("maxDistance").getAsDouble()), call);
+    }
 
-        return "Right-clicked " + Entities.named(target) + ".";
+    private static final class InteractTask implements Task {
+        private final String query;
+        private final double maxDistance;
+        private final Approach approach = new Approach();
+
+        private Entity target;
+
+        private InteractTask(String query, double maxDistance) {
+            this.query = query;
+            this.maxDistance = maxDistance;
+        }
+
+        @Override
+        public String name() {
+            return "interact-entity";
+        }
+
+        @Override
+        public void start(CallContext call) {
+            target = Entities.require(Mc.requirePlayer(), query, maxDistance);
+        }
+
+        @Override
+        public boolean tick(CallContext call) {
+            LocalPlayer player = Mc.requirePlayer();
+
+            if (!approach.reached(player, target)) {
+                return false;
+            }
+
+            Vec3 eyes = target.getEyePosition();
+            player.lookAt(EntityAnchorArgument.Anchor.EYES, eyes);
+            Mc.client().gameMode.interact(player, target, new EntityHitResult(target, eyes),
+                    InteractionHand.MAIN_HAND);
+            player.swing(InteractionHand.MAIN_HAND);
+
+            call.ok("Right-clicked " + Entities.named(target) + ".");
+            return true;
+        }
+
+        @Override
+        public void cleanup(CallContext call) {
+            approach.stop();
+        }
     }
 }

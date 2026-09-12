@@ -65,6 +65,7 @@ public final class OpenContainerTool implements Tool {
 
     private static final class OpenTask implements Task {
         private final BlockPos at;
+        private final Approach approach = new Approach();
         private boolean clicked;
         private int ticksSinceClick;
 
@@ -80,6 +81,9 @@ public final class OpenContainerTool implements Tool {
         @Override
         public boolean tick(CallContext call) {
             if (!clicked) {
+                if (!approach.reached(Mc.requirePlayer(), at)) {
+                    return false;
+                }
                 click();
                 clicked = true;
                 return false;
@@ -113,8 +117,6 @@ public final class OpenContainerTool implements Tool {
                 throw ToolException.refused("NOT_A_CONTAINER",
                         Positions.point(at) + " holds " + block + ", not a container");
             }
-
-            Reach.require(player, at);
 
             Vec3 middle = Vec3.atCenterOf(at);
             player.lookAt(EntityAnchorArgument.Anchor.EYES, middle);
