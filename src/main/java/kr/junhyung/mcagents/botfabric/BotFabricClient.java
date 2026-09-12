@@ -12,7 +12,12 @@ import kr.junhyung.mcagents.botfabric.rpc.RpcClient;
 import kr.junhyung.mcagents.botfabric.session.Session;
 import kr.junhyung.mcagents.botfabric.task.TaskScheduler;
 import kr.junhyung.mcagents.botfabric.tool.ToolRegistry;
+import kr.junhyung.mcagents.botfabric.tools.GetPlayerStateTool;
 import kr.junhyung.mcagents.botfabric.tools.GetPositionTool;
+import kr.junhyung.mcagents.botfabric.tools.GetWorldStateTool;
+import kr.junhyung.mcagents.botfabric.tools.ReadBossBarsTool;
+import kr.junhyung.mcagents.botfabric.tools.ReadPlayerListTool;
+import kr.junhyung.mcagents.botfabric.tools.ReadScoreboardTool;
 import kr.junhyung.mcagents.botfabric.tools.PressDialogButtonTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadWindowTool;
 import kr.junhyung.mcagents.botfabric.tools.RunCommandTool;
@@ -55,6 +60,11 @@ public class BotFabricClient implements ClientModInitializer {
         EventPump events = new EventPump(client);
 
         tools.register(new GetPositionTool());
+        tools.register(new GetPlayerStateTool());
+        tools.register(new GetWorldStateTool());
+        tools.register(new ReadScoreboardTool());
+        tools.register(new ReadBossBarsTool());
+        tools.register(new ReadPlayerListTool());
         tools.register(new SendChatTool());
         tools.register(new ReadWindowTool());
         tools.register(new WaitTicksTool(scheduler));

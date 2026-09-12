@@ -3,6 +3,7 @@
   "package": "kr.junhyung.mcagents.botfabric.mixin",
   "compatibilityLevel": "JAVA_${java}",
   "client": [
+    "BossHealthOverlayAccessor",
     "ClientPacketListenerMixin",
     "FramerateLimitTrackerMixin",
     "MinecraftAccessor"
