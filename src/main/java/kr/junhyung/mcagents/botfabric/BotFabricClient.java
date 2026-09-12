@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.screens.AccessibilityOnboardingScreen;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.tutorial.TutorialSteps;
 import net.minecraft.client.gui.screens.PauseScreen;
 import kr.junhyung.mcagents.botfabric.event.EventPump;
 import kr.junhyung.mcagents.botfabric.rpc.Dispatcher;
@@ -149,6 +150,12 @@ public class BotFabricClient implements ClientModInitializer {
                 configured[0] = true;
                 minecraft.options.pauseOnLostFocus = false;
                 minecraft.options.onboardAccessibility = false;
+                /*
+                The "Move with W, A, S and D" card sits in the corner of every screenshot a fresh
+                client takes, and a screenshot is what this bot is for. It is the tutorial for a
+                player who has never played, and there is no player.
+                */
+                minecraft.options.tutorialStep = TutorialSteps.NONE;
                 minecraft.options.save();
                 /*
                 A server pushes its resource pack during configuration and, unless the answer is
