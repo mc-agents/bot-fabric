@@ -25,7 +25,10 @@ import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.display.RecipeDisplay;
 import net.minecraft.world.item.crafting.display.RecipeDisplayEntry;
+import net.minecraft.world.item.crafting.display.ShapedCraftingRecipeDisplay;
+import net.minecraft.world.item.crafting.display.ShapelessCraftingRecipeDisplay;
 import net.minecraft.world.item.crafting.display.SlotDisplayContext;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.BlockHitResult;
@@ -44,8 +47,11 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class CraftItemTool implements Tool {
 
-    /** Roughly how far the other kind of bot will walk to a table before giving up on one. */
-    private static final int TABLE_SEARCH = 8;
+    /** As far as the other kind of bot will walk to a table, so both give up at the same place. */
+    private static final int TABLE_SEARCH = 16;
+
+    /** A player carries a two-by-two; anything larger is a crafting table. */
+    private static final int OWN_GRID_SIDE = 2;
 
     private static final int RESULT_SLOT = 0;
 
@@ -133,6 +139,27 @@ public final class CraftItemTool implements Tool {
 
             before = held(player);
             table = Positions.nearest(player, Blocks.CRAFTING_TABLE, TABLE_SEARCH);
+
+            if (table == null && needsTable(recipe.display())) {
+                throw ToolException.refused("NO_CRAFTING_TABLE", "Crafting " + path(output)
+                        + " needs a grid bigger than the two-by-two a player carries, and no"
+                        + " crafting table is within " + TABLE_SEARCH + " blocks.");
+            }
+        }
+
+        /**
+         * Whether the recipe wants more room than the player's own grid. Placing it into that grid
+         * anyway is refused by the server without a word, which the bot could only report as a
+         * result that never appeared -- a sentence that sends a caller looking for the wrong thing.
+         */
+        private static boolean needsTable(RecipeDisplay display) {
+            return switch (display) {
+                case ShapedCraftingRecipeDisplay shaped ->
+                        shaped.width() > OWN_GRID_SIDE || shaped.height() > OWN_GRID_SIDE;
+                case ShapelessCraftingRecipeDisplay shapeless ->
+                        shapeless.ingredients().size() > OWN_GRID_SIDE * OWN_GRID_SIDE;
+                default -> true;
+            };
         }
 
         @Override
@@ -241,15 +268,33 @@ public final class CraftItemTool implements Tool {
             return total;
         }
 
+        /**
+         * The recipe the book holds for this item, preferring one that fits the player's own grid.
+         *
+         * <p>Only a crafting recipe: a furnace one produces the same item and cannot be placed into
+         * a crafting grid at all, and the server answers a request to place one with silence.
+         */
         private RecipeDisplayEntry known(LocalPlayer player, ContextMap context) {
+            RecipeDisplayEntry found = null;
+
             for (RecipeCollection collection : player.getRecipeBook().getCollections()) {
                 for (RecipeDisplayEntry entry : collection.getRecipes()) {
-                    if (entry.resultItems(context).stream().anyMatch(stack -> stack.is(output))) {
+                    if (!crafting(entry.display())
+                            || entry.resultItems(context).stream().noneMatch(stack -> stack.is(output))) {
+                        continue;
+                    }
+                    if (!needsTable(entry.display())) {
                         return entry;
                     }
+                    found = found == null ? entry : found;
                 }
             }
-            return null;
+            return found;
+        }
+
+        private static boolean crafting(RecipeDisplay display) {
+            return display instanceof ShapedCraftingRecipeDisplay
+                    || display instanceof ShapelessCraftingRecipeDisplay;
         }
 
         private static StackedItemContents inventory(LocalPlayer player) {

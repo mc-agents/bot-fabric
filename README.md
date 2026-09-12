@@ -141,7 +141,7 @@ The ones worth naming:
 | --- | --- |
 | `screenshot` | PNG blob, scaled to the requested size |
 | `press-dialog-button` | matches a label exactly, then by substring |
-| `craft-item` | the server places the recipe; the answer is what the inventory gained |
+| `craft-item` | the server places the recipe; a grid bigger than the player's own says so rather than placing where it cannot fit, and the answer is what the inventory gained |
 | `fish` | the bite is the hook's own synced flag, not a splash somebody guessed at |
 | `move-to-position` | A* over the client's own collision shapes; the reason is in the refusal |
 | `can-craft`, `get-recipe`, `list-recipes` | the recipe book, and the DTO says so: a client is taught a recipe as the server unlocks it and never told the whole set |
