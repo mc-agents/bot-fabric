@@ -26,6 +26,24 @@ final class Positions {
         return position;
     }
 
+    /** The nearest block of a kind within a radius, or null. Used to find a crafting table. */
+    static BlockPos nearest(net.minecraft.client.player.LocalPlayer player,
+            net.minecraft.world.level.block.Block block, int radius) {
+        BlockPos feet = player.blockPosition();
+        BlockPos nearest = null;
+
+        for (BlockPos at : BlockPos.betweenClosed(feet.offset(-radius, -radius, -radius),
+                feet.offset(radius, radius, radius))) {
+            if (!player.level().getBlockState(at).is(block)) {
+                continue;
+            }
+            if (nearest == null || at.distSqr(feet) < nearest.distSqr(feet)) {
+                nearest = at.immutable();
+            }
+        }
+        return nearest;
+    }
+
     static JsonObject json(net.minecraft.world.phys.Vec3 at) {
         JsonObject position = new JsonObject();
         position.addProperty("x", (int) Math.floor(at.x));

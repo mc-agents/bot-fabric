@@ -132,7 +132,7 @@ public final class CraftItemTool implements Tool {
             }
 
             before = held(player);
-            table = nearestTable(player);
+            table = Positions.nearest(player, Blocks.CRAFTING_TABLE, TABLE_SEARCH);
         }
 
         @Override
@@ -258,22 +258,6 @@ public final class CraftItemTool implements Tool {
                 contents.accountSimpleStack(slot.getItem());
             }
             return contents;
-        }
-
-        private static BlockPos nearestTable(LocalPlayer player) {
-            BlockPos nearest = null;
-            BlockPos feet = player.blockPosition();
-
-            for (BlockPos at : BlockPos.betweenClosed(feet.offset(-TABLE_SEARCH, -TABLE_SEARCH, -TABLE_SEARCH),
-                    feet.offset(TABLE_SEARCH, TABLE_SEARCH, TABLE_SEARCH))) {
-                if (!player.level().getBlockState(at).is(Blocks.CRAFTING_TABLE)) {
-                    continue;
-                }
-                if (nearest == null || at.distSqr(feet) < nearest.distSqr(feet)) {
-                    nearest = at.immutable();
-                }
-            }
-            return nearest;
         }
 
         private static String path(Item item) {
