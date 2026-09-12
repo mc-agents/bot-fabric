@@ -140,7 +140,7 @@ The ones worth naming:
 | tool | notes |
 | --- | --- |
 | `screenshot` | PNG blob, scaled to the requested size |
-| `press-dialog-button` | matches a label exactly, then by substring |
+| `press-dialog-button` | matches a label exactly, then by substring; accepts the client's own confirmation, and refuses when that confirmation will not run the command |
 | `craft-item` | the server places the recipe; a grid bigger than the player's own says so rather than placing where it cannot fit, and the answer is what the inventory gained |
 | `find-blocks` | the whole cube read, sorted by real distance; the outward walk is what lets it stop early, not what orders the answer |
 | `read-block-entity` | sign faces as components; anything else is a block entity the client holds decoded, with no tag to write out, and it says so |

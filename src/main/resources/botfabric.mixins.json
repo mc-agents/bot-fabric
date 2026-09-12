@@ -6,6 +6,7 @@
     "BossHealthOverlayAccessor",
     "ClientCommonPacketListenerMixin",
     "ClientPacketListenerMixin",
+    "ConfirmScreenAccessor",
     "FishingHookAccessor",
     "FramerateLimitTrackerMixin",
     "KeyboardInputMixin",

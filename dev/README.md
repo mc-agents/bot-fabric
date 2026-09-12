@@ -19,8 +19,14 @@ docker cp dev/datapack/botcheck bot-fabric-dev-minecraft-1:/data/world/datapacks
 docker compose -f dev/compose.yml restart
 ```
 
-`botcheck:check` is a `multi_action` dialog with three buttons: one `run_command` that needs no
-permission (`/help`), one that does (`/say ...`), and one `dynamic/custom` action.
+`botcheck:check` is a `multi_action` dialog with three buttons: one `run_command` the client runs
+outright (`/help`), one it will not (`/say ...`), and one `dynamic/custom` action.
+
+The middle one is meant to fail. A command that sends chat as the player needs a signature the
+client will only produce from the chat screen, so the confirmation it opens offers to copy the
+command somewhere rather than to run it, and `press-dialog-button` refuses and says so. It used to
+press whatever button was first on that screen and report success for an action that never
+happened.
 
 ## The RPC harness
 
