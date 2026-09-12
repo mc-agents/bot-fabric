@@ -143,7 +143,7 @@ The ones worth naming:
 | `press-dialog-button` | matches a label exactly, then by substring |
 | `craft-item` | the server places the recipe; the answer is what the inventory gained |
 | `fish` | the bite is the hook's own synced flag, not a splash somebody guessed at |
-| `move-to-position` | straight at the target, stepping up a block; a wall is reported, not waited out |
+| `move-to-position` | A* over the client's own collision shapes; the reason is in the refusal |
 | `can-craft`, `get-recipe`, `list-recipes` | the recipe book, and the DTO says so: a client is taught a recipe as the server unlocks it and never told the whole set |
 | `switch-server` | the player object being replaced is the arrival; the proxy's refusals only ever arrive as chat |
 
@@ -262,9 +262,12 @@ costs. The client walked, read its action bar, crafted, and took a screenshot on
 - **The recipe tools answer about this bot.** A Minecraft client is sent a recipe as the server
   unlocks it and is never told the whole set, so "no recipe" from here means "not taught to me".
   The DTO carries `onlyWhatTheBotKnows` and mcp-server writes a sentence that says which.
-- **No pathfinding.** `move-to-position` walks straight at the target and steps up one block. It
-  does not go around a wall, and says how far it got instead of waiting out its timeout. Baritone
-  would mean an unofficial fork for 26.x, which is how the mineflayer problem started.
+- **Pathfinding is the client's own collision shapes, and nothing more.** `move-to-position` and
+  everything that approaches a thing search a route over the blocks the client can see: round a
+  wall, up one block, down three. What they will not do is anything a player cannot -- no flying,
+  no swimming up, no breaking through -- and a target behind a door or in an unloaded chunk is
+  reported as unreachable with the reason, not waited out. Baritone would mean an unofficial fork
+  for 26.x, which is how the mineflayer problem started.
 - **No authentication on the RPC link.** Same decision as `bot-mineflayer`: the port is meant to
   be reachable only by `mcp-server`.
 - **Offline mode only**, and commands that need a chat signature cannot be run from a dialog

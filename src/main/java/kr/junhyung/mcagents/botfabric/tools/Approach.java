@@ -1,6 +1,6 @@
 package kr.junhyung.mcagents.botfabric.tools;
 
-import kr.junhyung.mcagents.botfabric.nav.DirectNavigator;
+import kr.junhyung.mcagents.botfabric.nav.PathNavigator;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -22,7 +22,7 @@ final class Approach {
 
     private static final double REACH = 3.0;
 
-    private final DirectNavigator navigator = new DirectNavigator();
+    private final PathNavigator navigator = new PathNavigator();
 
     boolean reached(LocalPlayer player, BlockPos at) {
         return reached(player, Vec3.atLowerCornerOf(at), Positions.point(at));
@@ -44,8 +44,7 @@ final class Approach {
             navigator.stop();
             throw ToolException.refused("UNREACHABLE", "could not get within reach of " + what
                     + "; it stopped " + Numbers.oneDecimal(player.position().distanceTo(target))
-                    + " blocks away. This kind of bot walks straight at a target and does not go"
-                    + " around walls, so teleport with run-command when something is in the way.");
+                    + " blocks away: " + navigator.trouble() + ".");
         }
         return false;
     }

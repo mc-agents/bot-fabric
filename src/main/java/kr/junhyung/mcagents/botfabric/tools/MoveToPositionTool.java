@@ -2,7 +2,7 @@ package kr.junhyung.mcagents.botfabric.tools;
 
 import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.Mc;
-import kr.junhyung.mcagents.botfabric.nav.DirectNavigator;
+import kr.junhyung.mcagents.botfabric.nav.PathNavigator;
 import kr.junhyung.mcagents.botfabric.rpc.CallContext;
 import kr.junhyung.mcagents.botfabric.task.Task;
 import kr.junhyung.mcagents.botfabric.task.TaskScheduler;
@@ -16,9 +16,9 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Walk to a position.
  *
- * <p>Straight at it, stepping up one block at a time. A wall is reported as how far it got rather
- * than waited out, because a caller who hears "could not reach it, stopped 6 blocks short" can
- * teleport, and one who hears nothing for a minute cannot.
+ * <p>The route is searched over the blocks the client can see, so it goes round what is in the way.
+ * A target it cannot reach is reported as how far it got rather than waited out, because a caller
+ * who hears "stopped 6 blocks short" can teleport, and one who hears nothing for a minute cannot.
  */
 public final class MoveToPositionTool implements Tool {
 
@@ -49,7 +49,7 @@ public final class MoveToPositionTool implements Tool {
         private final BlockPos target;
         private final double range;
         private final long timeoutMs;
-        private final DirectNavigator navigator = new DirectNavigator();
+        private final PathNavigator navigator = new PathNavigator();
         private final long startedNanos = System.nanoTime();
 
         private WalkTask(BlockPos target, double range, long timeoutMs) {
@@ -77,8 +77,8 @@ public final class MoveToPositionTool implements Tool {
                 throw ToolException.refused("UNREACHABLE", "could not reach "
                         + Positions.point(target) + " within " + timeoutMs + "ms; it stopped "
                         + Numbers.oneDecimal(Mc.requirePlayer().position().distanceTo(destination))
-                        + " blocks away. This kind of bot walks straight at a target and does not go"
-                        + " around walls, so teleport with run-command when something is in the way.");
+                        + " blocks away: " + navigator.trouble()
+                        + ". Teleport with run-command when the way is not walkable.");
             }
             return false;
         }
