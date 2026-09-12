@@ -19,7 +19,7 @@ class TaskSchedulerTest {
 
     /* Never started, so a result goes to its outbound queue and no socket is involved. */
     private static final RpcClient OFFLINE =
-            new RpcClient(new BotConfig("127.0.0.1", 8765, "test", 2000, false, 0));
+            new RpcClient(new BotConfig("127.0.0.1", 8765, "test", 2000, false, 0, 6, 1));
 
     private static CallContext call() {
         return new CallContext(OFFLINE, "1", "test", 1_000);

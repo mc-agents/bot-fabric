@@ -60,27 +60,30 @@ path.
 
 ## What it costs
 
-Headless under Xvfb at 1280x720 with Mesa llvmpipe, one bot idle in a flat world.
+Headless under Xvfb with Mesa llvmpipe, one bot on a flat dev world with no resource pack. RSS of
+the client process, read from `/proc`, after joining and taking a screenshot.
 
 | | |
 | --- | --- |
-| Client JVM RSS | 253-347 MiB, settling around 280-310 MiB |
-| Whole container RSS (client + Gradle + Xvfb) | 300-430 MiB |
-| CPU while idle at 1fps | 10-20% of a core, with a ~1s burst near 100% each time a frame is drawn |
+| Linked, not in a world | 1.10 GiB |
+| In a world, after a screenshot | 1.6-1.7 GiB (`arm64`), 1.9 GiB (`amd64` under emulation) |
+| Of that, outside the Java heap | ~1.2 GiB — the heap ceiling is 1 GiB and capping it at 384 MiB moved the total by ~100 MiB |
+| CPU while idle at 1fps | 3% of a core out of a world, 25-50% in one |
 | `screenshot` round trip, call to result | 1.1-2.1s |
 | Immediate tool (`get-position`) round trip | 0.05-0.94s |
 
-The mineflayer baseline is 206 MiB for eight bots sharing one event loop. One fabric bot is
-worth roughly ten of them in memory, which is the reason the `kind` argument exists — though it
-is a good deal less than the 1-1.5 GiB the plan budgeted.
+**The same client windowed on a macOS desktop is 287 MiB.** The difference is the graphics card:
+with one, the textures and the chunk meshes live on it and never appear in RSS. Under llvmpipe
+there is no card, so all of it is system memory, and no client setting moves it — render distance
+4 with no mipmaps, the FAST preset and minimal particles measured the same 1.6 GiB as the defaults
+a fresh client picks. What those settings buy is the work of drawing, not the memory.
 
-**The CPU figure is emulated.** The measurements above come from an `linux/amd64` container on an
-ARM Mac, because 26.1.2 has no `linux-arm64` LWJGL natives; software rasterisation under binary
-translation is the worst case for CPU and says little about a native x86_64 node. Memory is
-unaffected by that.
+An earlier version of this table said 253-347 MiB. That figure was wrong: five runs across both
+architectures, in and out of a world, put the floor above a gigabyte. It is quoted here because a
+plan was written on the strength of it, and because the operator's memory request still is.
 
-For comparison, the same bot windowed on the macOS desktop with hardware GL: ~440 MiB RSS,
-1.2-1.7% of a core idle, `screenshot` 1.33-1.38s, `get-position` 0.93-1.01s.
+The mineflayer baseline is 192 MiB a pod. One fabric bot is worth eight of them, which is the
+reason the `kind` argument exists.
 
 The second-long floor under most calls is the frame budget. Rendering cannot be turned off —
 GLFW and GL are set up in the `Minecraft` constructor — so it runs at 1fps while idle, and a
@@ -248,6 +251,15 @@ matrix comes from `./gradlew printVersions`, so adding a version does not touch 
 | `BOT_NAME` | `fabric_bot` | reported in `hello` |
 | `RECONNECT_MIN_MS` | `2000` | |
 | `BOT_RPC_ENABLED` | `true` | `false` runs a plain client |
+| `HEALTH_PORT` | `8080` | `/healthz`, `/readyz` |
+| `BOT_RENDER_DISTANCE` | `8` | chunks. A fresh client picks 16, which a bot has no use for |
+| `BOT_FRAME_RATE_LIMIT` | `1` | frames a second while idle; a call in flight raises it to 60 |
+
+The operator has sent the last two since it was written and nothing read either of them, so
+`render.frameRateLimit` in the CRD was documentation until now. What a bot's client draws is
+turned down with them: the FAST preset, no mipmaps, no clouds, no shadows and minimal particles.
+Only drawing is affected -- the effects feed is built from the packets, so a bot that draws no
+particles still reports them.
 
 Each has a system property twin (`mcagents.rpc.port` and so on) so the Gradle run configs can
 set them: `./gradlew runClient -Prpc.port=8766`.

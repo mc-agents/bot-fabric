@@ -1,5 +1,7 @@
 package kr.junhyung.mcagents.botfabric;
 
+import kr.junhyung.mcagents.botfabric.render.RenderOptions;
+
 /**
  * Where to dial and what to call itself, from the environment.
  *
@@ -10,7 +12,7 @@ package kr.junhyung.mcagents.botfabric;
  * for running the client by hand with nothing driving it.
  */
 public record BotConfig(String host, int port, String botName, long reconnectDelayMs, boolean enabled,
-                        int healthPort) {
+                        int healthPort, int renderDistance, int frameRateLimit) {
     public static BotConfig fromEnvironment() {
         String host = env("MCP_SERVER_HOST", "127.0.0.1");
         int port = Integer.parseInt(env("MCP_SERVER_PORT", "8765"));
@@ -18,7 +20,14 @@ public record BotConfig(String host, int port, String botName, long reconnectDel
         long delay = Long.parseLong(env("RECONNECT_MIN_MS", "2000"));
         boolean enabled = !"false".equalsIgnoreCase(env("BOT_RPC_ENABLED", "true"));
         int healthPort = Integer.parseInt(env("HEALTH_PORT", "8080"));
-        return new BotConfig(host, port, name, delay, enabled, healthPort);
+        /*
+        The operator has sent these two since it was written and nothing read either of them, so
+        render.frameRateLimit in the CRD was documentation. A bot's client draws for screenshots
+        and nothing else, and in a container every frame and every texture is system memory.
+        */
+        int distance = RenderOptions.distanceFrom(env("BOT_RENDER_DISTANCE", ""));
+        int frames = Integer.parseInt(env("BOT_FRAME_RATE_LIMIT", "1"));
+        return new BotConfig(host, port, name, delay, enabled, healthPort, distance, frames);
     }
 
     private static String env(String key, String fallback) {

@@ -10,6 +10,8 @@ import net.minecraft.client.tutorial.TutorialSteps;
 import net.minecraft.client.gui.screens.PauseScreen;
 import kr.junhyung.mcagents.botfabric.event.EventPump;
 import kr.junhyung.mcagents.botfabric.rpc.Dispatcher;
+import kr.junhyung.mcagents.botfabric.render.FrameBudget;
+import kr.junhyung.mcagents.botfabric.render.RenderOptions;
 import kr.junhyung.mcagents.botfabric.rpc.RpcClient;
 import kr.junhyung.mcagents.botfabric.session.Session;
 import kr.junhyung.mcagents.botfabric.task.TaskScheduler;
@@ -93,6 +95,7 @@ public class BotFabricClient implements ClientModInitializer {
         /* Pod readiness is the link, and it is the only signal the operator has about one. */
         HealthServer.start(config.healthPort(), client::linked);
         EventPump events = new EventPump(client);
+        FrameBudget.idle(config.frameRateLimit());
 
         tools.register(new GetPositionTool());
         tools.register(new GetPlayerStateTool());
@@ -156,6 +159,7 @@ public class BotFabricClient implements ClientModInitializer {
                 player who has never played, and there is no player.
                 */
                 minecraft.options.tutorialStep = TutorialSteps.NONE;
+                RenderOptions.apply(minecraft.options, config.renderDistance());
                 minecraft.options.save();
                 /*
                 A server pushes its resource pack during configuration and, unless the answer is
