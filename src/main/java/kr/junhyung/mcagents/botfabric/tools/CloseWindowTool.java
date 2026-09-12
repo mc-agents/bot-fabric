@@ -23,7 +23,7 @@ public final class CloseWindowTool extends ReadTool {
     protected JsonObject read(JsonObject args) {
         JsonObject data = new JsonObject();
 
-        if (!(Mc.client().screen instanceof AbstractContainerScreen<?> container)) {
+        if (!(Mc.screen() instanceof AbstractContainerScreen<?> container)) {
             data.add("closed", JsonNull.INSTANCE);
             return data;
         }

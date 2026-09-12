@@ -242,6 +242,21 @@ matrix comes from `./gradlew printVersions`, so adding a version does not touch 
 Each has a system property twin (`mcagents.rpc.port` and so on) so the Gradle run configs can
 set them: `./gradlew runClient -Prpc.port=8766`.
 
+## Following a Minecraft version
+
+26.1.2 and 26.2, and adding the second one is what the Stonecutter setup is for. It cost two files
+-- `versions/26.2/gradle.properties` and one line in `settings.gradle.kts` -- and then fifteen
+compile errors, because 26.2 moved four things: the screen from a field on `Minecraft` to `Gui`, the
+boss bar overlay one level deeper into `Hud`, the render target to `GameRenderer`, and hiding the
+HUD from an option to a method on `Hud`.
+
+Those fifteen are now five methods on `Mc`, each with the version split inside it, so the next move
+is one edit rather than fifteen. CI takes its matrix from Stonecutter, so a version added to
+`settings.gradle.kts` is built, smoke-tested and published without touching the workflow.
+
+All six mixins applied unchanged on 26.2, which is the number that decides what following a version
+costs. The client walked, read its action bar, crafted, and took a screenshot on both.
+
 ## Known limits
 
 - **The recipe tools answer about this bot.** A Minecraft client is sent a recipe as the server

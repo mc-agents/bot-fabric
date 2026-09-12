@@ -17,7 +17,7 @@ public final class ReadBossBarsTool extends ReadTool {
     @Override
     protected JsonObject read(JsonObject args) {
         BossHealthOverlayAccessor overlay =
-                (BossHealthOverlayAccessor) Mc.client().gui.getBossOverlay();
+                (BossHealthOverlayAccessor) Mc.bossOverlay();
 
         JsonArray bars = new JsonArray();
         for (LerpingBossEvent event : overlay.mcagents$events().values()) {

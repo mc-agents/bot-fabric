@@ -75,8 +75,8 @@ public final class ScreenshotTool implements Tool {
             startedAt = System.currentTimeMillis();
             FrameBudget.boost();
             boosted = true;
-            hideGuiBefore = Mc.client().options.hideGui;
-            Mc.client().options.hideGui = !hud;
+            hideGuiBefore = Mc.hudHidden();
+            Mc.hideHud(!hud);
         }
 
         @Override
@@ -87,10 +87,10 @@ public final class ScreenshotTool implements Tool {
             if (!requested) {
                 requested = true;
                 Minecraft minecraft = Mc.client();
-                if (minecraft.getMainRenderTarget().getColorTexture() == null) {
+                if (Mc.renderTarget().getColorTexture() == null) {
                     throw ToolException.refused("NO_FRAMEBUFFER", "the client has no complete framebuffer");
                 }
-                Screenshot.takeScreenshot(minecraft.getMainRenderTarget(), captured::set);
+                Screenshot.takeScreenshot(Mc.renderTarget(), captured::set);
                 return false;
             }
 
@@ -139,7 +139,7 @@ public final class ScreenshotTool implements Tool {
                 FrameBudget.release();
                 boosted = false;
             }
-            Mc.client().options.hideGui = hideGuiBefore;
+            Mc.hideHud(hideGuiBefore);
             NativeImage leftover = captured.getAndSet(null);
             if (leftover != null) {
                 leftover.close();

@@ -32,7 +32,7 @@ final class Windows {
 
     /** The open container screen, or null. Nothing being open is a state and not a failure. */
     static AbstractContainerScreen<?> open() {
-        return Mc.client().screen instanceof AbstractContainerScreen<?> container ? container : null;
+        return Mc.screen() instanceof AbstractContainerScreen<?> container ? container : null;
     }
 
     static AbstractContainerScreen<?> require() {

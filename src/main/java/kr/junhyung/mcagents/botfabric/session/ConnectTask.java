@@ -49,8 +49,8 @@ public final class ConnectTask implements Task {
     @Override
     public boolean tick(CallContext call) {
         Minecraft minecraft = Mc.client();
-        if (minecraft.screen instanceof DisconnectedScreen) {
-            String reason = minecraft.screen.getTitle().getString();
+        if (Mc.screen() instanceof DisconnectedScreen) {
+            String reason = Mc.screen().getTitle().getString();
             session.report("disconnected", reason, reason);
             call.fail(ToolError.TOOL, "REFUSED", "the server refused the connection: " + reason, true);
             return true;

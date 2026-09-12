@@ -84,7 +84,7 @@ public final class PressDialogButtonTool implements Tool {
 
         @Override
         public boolean tick(CallContext call) {
-            Screen screen = Mc.client().screen;
+            Screen screen = Mc.screen();
             if (pressed == null) {
                 press(screen);
                 return false;
@@ -138,7 +138,7 @@ public final class PressDialogButtonTool implements Tool {
             confirmTitle = screen.getTitle().getString();
             accept.onPress(new MouseButtonInfo(0, 0));
             confirmed = true;
-            report(call, Mc.client().screen);
+            report(call, Mc.screen());
             return true;
         }
 

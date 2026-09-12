@@ -150,9 +150,9 @@ public class BotFabricClient implements ClientModInitializer {
                 minecraft.options.onboardAccessibility = false;
                 minecraft.options.save();
             }
-            if (minecraft.screen instanceof ChatScreen
-                    || minecraft.screen instanceof AccessibilityOnboardingScreen) {
-                minecraft.setScreen(null);
+            if (Mc.screen() instanceof ChatScreen
+                    || Mc.screen() instanceof AccessibilityOnboardingScreen) {
+                Mc.setScreen(null);
             }
             scheduler.tick();
         });
