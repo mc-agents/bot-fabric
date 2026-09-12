@@ -116,13 +116,20 @@ two.
 
 ### Mixins
 
-Two, against a budget of eight. Everything else comes from Fabric API events, which do not break
-when mappings move.
+Eight, against a budget of eight. Everything else comes from Fabric API events, which do not break
+when mappings move; each of these is here because there is no event and no field to read
+afterwards.
 
 | mixin | why |
 | --- | --- |
 | `MinecraftAccessor` | makes `Minecraft.user` writable so `connect` can change the username, and resets `profileFuture` so the game profile follows it |
 | `FramerateLimitTrackerMixin` | returns the frame budget from `getFramerateLimit` |
+| `ClientPacketListenerMixin` | the five feeds with no Fabric API event: action bar, title, subtitle, sound, particle |
+| `ClientCommonPacketListenerMixin` | the client's own verdict on a resource pack, read off the packet it sends; and the two dialog packets, which are common ones |
+| `BossHealthOverlayAccessor` | the boss bars the HUD is holding, which it keeps privately and only draws |
+| `KeyboardInputMixin` | lets a task hold a key down, which is how walking and jumping are done |
+| `FishingHookAccessor` | the hook's own synced "biting" flag, rather than guessing from a splash |
+| `ConfirmScreenAccessor` | the button a confirmation calls yes, which is not the first one on it |
 
 Chat, ticks, connection lifecycle and screens are all Fabric API.
 
@@ -141,6 +148,7 @@ The ones worth naming:
 | --- | --- |
 | `screenshot` | PNG blob, scaled to the requested size |
 | `press-dialog-button` | matches a label exactly, then by substring; accepts the client's own confirmation, and refuses when that confirmation will not run the command |
+| `read-dialog` | the dialog as the game serialises it, read from the packet rather than from the screen |
 | `craft-item` | the server places the recipe; a grid bigger than the player's own says so rather than placing where it cannot fit, and the answer is what the inventory gained |
 | `find-blocks` | the whole cube read, sorted by real distance; the outward walk is what lets it stop early, not what orders the answer |
 | `read-block-entity` | sign faces as components; anything else is a block entity the client holds decoded, with no tag to write out, and it says so |
@@ -256,7 +264,7 @@ Those fifteen are now five methods on `Mc`, each with the version split inside i
 is one edit rather than fifteen. CI takes its matrix from Stonecutter, so a version added to
 `settings.gradle.kts` is built, smoke-tested and published without touching the workflow.
 
-All six mixins applied unchanged on 26.2, which is the number that decides what following a version
+Every mixin applied unchanged on 26.2, which is the number that decides what following a version
 costs. The client walked, read its action bar, crafted, and took a screenshot on both.
 
 ## Known limits

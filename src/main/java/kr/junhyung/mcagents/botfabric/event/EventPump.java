@@ -1,10 +1,13 @@
 package kr.junhyung.mcagents.botfabric.event;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import kr.junhyung.mcagents.botfabric.rpc.RpcClient;
+import kr.junhyung.mcagents.botfabric.text.Dialogs;
 import kr.junhyung.mcagents.botfabric.text.Segments;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.dialog.Dialog;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -35,6 +38,22 @@ public final class EventPump {
     }
 
     public void emit(String kind, String source, Component message) {
+        emit(kind, source, message, null);
+    }
+
+    /**
+     * A dialog, as structure rather than as a sentence.
+     *
+     * <p>mcp-server reads the title, the body and the buttons out of it and writes the line: a
+     * dialog is not one piece of text, and the order its parts are read in is presentation. The
+     * title rides along as the text field so a server that changed nothing else still has a
+     * fallback to show.
+     */
+    public void dialog(Dialog shown) {
+        emit("dialog", "dialog", shown.common().title(), Dialogs.raw(shown));
+    }
+
+    private void emit(String kind, String source, Component message, JsonElement data) {
         long id = seq.incrementAndGet();
         long now = System.currentTimeMillis();
 
@@ -62,6 +81,9 @@ public final class EventPump {
         key without the game's language table.
         */
         event.add("component", Segments.raw(message));
+        if (data != null) {
+            event.add("data", data);
+        }
         event.addProperty("ts", now);
         event.addProperty("firstTs", now);
         event.addProperty("repeats", 1);

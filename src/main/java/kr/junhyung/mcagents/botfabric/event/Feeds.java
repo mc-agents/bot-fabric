@@ -1,6 +1,7 @@
 package kr.junhyung.mcagents.botfabric.event;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.dialog.Dialog;
 
 /**
  * Where a mixin hands an event to whatever is pumping them.
@@ -32,6 +33,21 @@ public final class Feeds {
         EventPump listener = pump;
         if (listener != null) {
             listener.emit("title", source, text);
+        }
+    }
+
+    /** A dialog the server put on screen, and the fact of one going away. */
+    public static void dialog(Dialog shown) {
+        EventPump listener = pump;
+        if (listener != null) {
+            listener.dialog(shown);
+        }
+    }
+
+    public static void dialogClosed() {
+        EventPump listener = pump;
+        if (listener != null) {
+            listener.emit("dialog", "closed", Component.literal("the dialog was closed"));
         }
     }
 
