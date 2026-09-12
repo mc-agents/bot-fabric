@@ -48,10 +48,10 @@ final class Windows {
     }
 
     static JsonObject describe(AbstractContainerScreen<?> container) {
-        return describe(container.getMenu(), container.getTitle().getString());
+        return describe(container.getMenu(), container.getTitle());
     }
 
-    static JsonObject describe(AbstractContainerMenu menu, String title) {
+    static JsonObject describe(AbstractContainerMenu menu, Component title) {
         JsonArray filled = new JsonArray();
         for (Slot slot : menu.slots) {
             ItemStack stack = slot.getItem();
@@ -64,7 +64,9 @@ final class Windows {
         int inventoryStart = Math.max(slotCount - PLAYER_INVENTORY_SLOTS, 0);
 
         JsonObject window = new JsonObject();
-        window.addProperty("title", title);
+        window.addProperty("title", title.getString());
+        /* A menu header is drawn in the pack's own font as often as an item name is. */
+        window.add("titleComponent", Segments.raw(title));
         window.addProperty("type", BuiltInRegistries.MENU.getKey(menu.getType()).toString());
         window.addProperty("slotCount", slotCount);
         window.add("containerSlots", range(0, Math.max(inventoryStart - 1, 0)));

@@ -3,6 +3,7 @@ package kr.junhyung.mcagents.botfabric.tools;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.Mc;
+import kr.junhyung.mcagents.botfabric.text.Segments;
 import kr.junhyung.mcagents.botfabric.tool.ReadTool;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 
@@ -29,6 +30,7 @@ public final class CloseWindowTool extends ReadTool {
         }
 
         data.addProperty("closed", container.getTitle().getString());
+        data.add("closedComponent", Segments.raw(container.getTitle()));
         Mc.requirePlayer().closeContainer();
 
         return data;
