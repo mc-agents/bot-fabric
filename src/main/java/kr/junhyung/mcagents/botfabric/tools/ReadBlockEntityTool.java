@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.Mc;
+import kr.junhyung.mcagents.botfabric.text.Segments;
 import kr.junhyung.mcagents.botfabric.tool.ReadTool;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -36,14 +37,17 @@ public final class ReadBlockEntityTool extends ReadTool {
         BlockEntity entity = Mc.client().level.getBlockEntity(at);
         data.addProperty("present", entity != null);
 
+        /*
+        An array either way. Null here made mcp-server refuse the whole answer for anything that is
+        not a sign, because the renderer asks whether the list is empty -- so read-block-entity on a
+        chest came back as an internal error rather than as a sentence.
+        */
+        JsonArray faces = new JsonArray();
         if (entity instanceof SignBlockEntity sign) {
-            JsonArray faces = new JsonArray();
             faces.add(face("front_text", sign.getFrontText()));
             faces.add(face("back_text", sign.getBackText()));
-            data.add("signFaces", faces);
-        } else {
-            data.add("signFaces", JsonNull.INSTANCE);
         }
+        data.add("signFaces", faces);
 
         /*
         The raw NBT is the server's, and only a client that was sent it has any. A vanilla client
@@ -55,13 +59,18 @@ public final class ReadBlockEntityTool extends ReadTool {
 
     private static JsonObject face(String name, SignText text) {
         JsonArray lines = new JsonArray();
+        JsonArray components = new JsonArray();
+
         for (Component line : text.getMessages(false)) {
             lines.add(line.getString());
+            components.add(Segments.raw(line));
         }
 
         JsonObject face = new JsonObject();
         face.addProperty("face", name);
         face.add("lines", lines);
+        /* A shop sign's price line is drawn in the pack's own font, the same as a HUD. */
+        face.add("lineComponents", components);
         return face;
     }
 }

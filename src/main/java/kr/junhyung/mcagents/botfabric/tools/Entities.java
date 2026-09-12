@@ -1,11 +1,14 @@
 package kr.junhyung.mcagents.botfabric.tools;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import kr.junhyung.mcagents.botfabric.Mc;
+import kr.junhyung.mcagents.botfabric.text.Segments;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -34,6 +37,11 @@ final class Entities {
             return player.getGameProfile().name();
         }
         return id(entity);
+    }
+
+    /** The component that name was written as, for mcp-server to flatten itself. */
+    static JsonElement labelComponent(Entity entity) {
+        return entity.hasCustomName() ? Segments.raw(entity.getCustomName()) : JsonNull.INSTANCE;
     }
 
     /** The registry id without the namespace. What a thing is, whatever a server named it. */
@@ -103,6 +111,8 @@ final class Entities {
     static JsonObject describe(Entity entity, Entity from) {
         JsonObject described = new JsonObject();
         described.addProperty("label", label(entity));
+        /* A nameplate is a HUD on a server that draws with glyphs, so the component travels too. */
+        described.add("labelComponent", labelComponent(entity));
         described.addProperty("type", id(entity));
         described.add("position", Positions.json(entity.position()));
         described.addProperty("distance", Math.round(entity.distanceTo(from) * 10.0) / 10.0);

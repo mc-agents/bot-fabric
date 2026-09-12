@@ -4,7 +4,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.Mc;
+import kr.junhyung.mcagents.botfabric.text.Segments;
 import kr.junhyung.mcagents.botfabric.tool.ReadTool;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.scores.DisplaySlot;
 import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.PlayerScoreEntry;
@@ -36,14 +38,25 @@ public final class ReadScoreboardTool extends ReadTool {
 
         JsonArray entries = new JsonArray();
         for (PlayerScoreEntry score : scoreboard.listPlayerScores(objective)) {
+            /*
+            ownerName() and not owner(): a server may give an entry a name of its own, and that is
+            what the sidebar draws. Reading the owner instead reported the key -- a uuid or an
+            internal handle on the servers that use one -- where the screen showed a player's name.
+            */
+            Component name = score.ownerName();
+
             JsonObject entry = new JsonObject();
-            entry.addProperty("name", score.owner());
+            entry.addProperty("name", name.getString());
+            entry.add("nameComponent", Segments.raw(name));
             entry.addProperty("score", score.value());
             entries.add(entry);
         }
 
+        Component title = objective.getDisplayName();
+
         JsonObject board = new JsonObject();
-        board.addProperty("title", objective.getDisplayName().getString());
+        board.addProperty("title", title.getString());
+        board.add("titleComponent", Segments.raw(title));
         board.add("entries", entries);
         data.add("board", board);
 

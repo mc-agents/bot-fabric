@@ -143,6 +143,7 @@ The ones worth naming:
 | `press-dialog-button` | matches a label exactly, then by substring |
 | `craft-item` | the server places the recipe; a grid bigger than the player's own says so rather than placing where it cannot fit, and the answer is what the inventory gained |
 | `find-blocks` | the whole cube read, sorted by real distance; the outward walk is what lets it stop early, not what orders the answer |
+| `read-block-entity` | sign faces as components; anything else is a block entity the client holds decoded, with no tag to write out, and it says so |
 | `fish` | the bite is the hook's own synced flag, not a splash somebody guessed at |
 | `move-to-position` | A* over the client's own collision shapes; the reason is in the refusal |
 | `can-craft`, `get-recipe`, `list-recipes` | the recipe book, and the DTO says so: a client is taught a recipe as the server unlocks it and never told the whole set |
@@ -259,6 +260,13 @@ All six mixins applied unchanged on 26.2, which is the number that decides what 
 costs. The client walked, read its action bar, crafted, and took a screenshot on both.
 
 ## Known limits
+
+- **A block entity that is not a sign cannot be written out.** A Minecraft client is handed the
+  decoded block entity rather than the server's tag, so there is nothing honest to put in `raw`:
+  `read-block-entity` on a chest says it carries one this bot cannot read. The other kind of bot
+  is sent whatever tag the server chose to send and prints that, so the two answer differently
+  about the same chest -- each truthfully about what it holds. Sign faces, which are the reason
+  the tool exists, are read from the components the client was given.
 
 - **The recipe tools answer about this bot.** A Minecraft client is sent a recipe as the server
   unlocks it and is never told the whole set, so "no recipe" from here means "not taught to me".
