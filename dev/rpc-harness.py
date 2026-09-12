@@ -80,7 +80,11 @@ class Link:
                 self.results[message["id"]] = message
             elif kind_name == "event":
                 self.events.append(message)
-        print(f"<-- {json.dumps(message)[:1200]}", flush=True)
+        body = json.dumps(message)
+        # The whole frame when asked, because a truncated one cannot be measured or replayed. A
+        # component is over a kilobyte on a server that draws its interface with glyphs.
+        limit = int(os.environ.get("HARNESS_PRINT_LIMIT", "1200"))
+        print(f"<-- {body if limit <= 0 else body[:limit]}", flush=True)
 
     def name_blobs(self, blobs):
         """A blob frame arrives before the result that says what it is, so rename it after."""

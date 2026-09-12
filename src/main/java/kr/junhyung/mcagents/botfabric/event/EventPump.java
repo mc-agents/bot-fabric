@@ -56,6 +56,12 @@ public final class EventPump {
         if (kind.equals("actionBar") || kind.equals("title")) {
             event.add("segments", Segments.of(message));
         }
+        /*
+        And the component itself, for every feed. mcp-server flattens it, so the rule lives in one
+        place; the segments above stay for the one thing it cannot do, which is resolve a translate
+        key without the game's language table.
+        */
+        event.add("component", Segments.raw(message));
         event.addProperty("ts", now);
         event.addProperty("firstTs", now);
         event.addProperty("repeats", 1);
