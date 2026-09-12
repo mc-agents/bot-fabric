@@ -5,10 +5,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.Mc;
+import kr.junhyung.mcagents.botfabric.text.Segments;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -96,12 +98,27 @@ final class Windows {
         boolean named = stack.has(DataComponents.CUSTOM_NAME);
         entry.addProperty("label", named ? stack.getHoverName().getString() : null);
 
+        /*
+        And the component it was written as, because a plugin draws a menu out of custom-named
+        items and writes those names in the resource pack's own glyphs. Flattened to a string the
+        icons are gone and the labels run together, so mcp-server does the flattening from this and
+        the rule lives in one place rather than once per kind of bot.
+        */
+        entry.add("labelComponent",
+                named ? Segments.raw(stack.get(DataComponents.CUSTOM_NAME)) : JsonNull.INSTANCE);
+
         JsonArray lore = new JsonArray();
+        JsonArray loreComponents = new JsonArray();
         ItemLore lines = stack.get(DataComponents.LORE);
+
         if (lines != null) {
-            lines.lines().forEach(line -> lore.add(line.getString()));
+            for (Component line : lines.lines()) {
+                lore.add(line.getString());
+                loreComponents.add(Segments.raw(line));
+            }
         }
         entry.add("lore", lore);
+        entry.add("loreComponents", loreComponents);
 
         return entry;
     }
