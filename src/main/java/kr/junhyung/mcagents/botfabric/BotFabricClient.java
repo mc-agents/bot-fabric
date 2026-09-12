@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.screens.AccessibilityOnboardingScreen;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.PauseScreen;
 import kr.junhyung.mcagents.botfabric.event.EventPump;
 import kr.junhyung.mcagents.botfabric.rpc.Dispatcher;
 import kr.junhyung.mcagents.botfabric.rpc.RpcClient;
@@ -149,9 +150,23 @@ public class BotFabricClient implements ClientModInitializer {
                 minecraft.options.pauseOnLostFocus = false;
                 minecraft.options.onboardAccessibility = false;
                 minecraft.options.save();
+                /*
+                A server pushes its resource pack during configuration and, unless the answer is
+                already "always", the client puts up a prompt and waits for somebody to click it.
+                Nobody will: the bot then sits in configuration until join-server gives up with a
+                spawn timeout, having never reached the world. A server that draws its interface
+                with custom glyphs is also a server whose pack the bot has to have.
+                */
             }
+            /*
+            The screens that open by themselves. The pause screen is the one that cost a real QA
+            pass: a client in a window loses focus, Minecraft pauses, and the next screenshot is of
+            the game menu rather than of the world. Under Xvfb there is no focus to lose, so CI
+            cannot see it. pauseOnLostFocus is set below and does not help a screen already up.
+            */
             if (Mc.screen() instanceof ChatScreen
-                    || Mc.screen() instanceof AccessibilityOnboardingScreen) {
+                    || Mc.screen() instanceof AccessibilityOnboardingScreen
+                    || Mc.screen() instanceof PauseScreen) {
                 Mc.setScreen(null);
             }
             scheduler.tick();

@@ -3,6 +3,7 @@ package kr.junhyung.mcagents.botfabric.tools;
 import com.google.gson.JsonObject;
 import com.mojang.blaze3d.platform.NativeImage;
 import kr.junhyung.mcagents.botfabric.Mc;
+import kr.junhyung.mcagents.botfabric.event.ResourcePacks;
 import kr.junhyung.mcagents.botfabric.render.FrameBudget;
 import kr.junhyung.mcagents.botfabric.rpc.Blob;
 import kr.junhyung.mcagents.botfabric.rpc.CallContext;
@@ -18,6 +19,7 @@ import net.minecraft.client.Screenshot;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class ScreenshotTool implements Tool {
@@ -119,8 +121,24 @@ public final class ScreenshotTool implements Tool {
                 png = encode(source);
             }
 
-            call.ok("captured a %dx%d frame (%d bytes)".formatted(outWidth, outHeight, png.length),
+            call.ok("captured a %dx%d frame (%d bytes)%s"
+                            .formatted(outWidth, outHeight, png.length, packWarning()),
                     null, List.of(Blob.image("image/png", "screenshot.png", outWidth, outHeight, png)));
+        }
+
+        /**
+         * A server that draws its interface with custom glyphs has none of it without the pack, and
+         * the client carries on with the missing-character box in place of every glyph. The picture
+         * then looks like a broken interface rather than like a pack that never arrived, so the
+         * picture says which.
+         */
+        private static String packWarning() {
+            String failure = ResourcePacks.failure();
+
+            return failure == null ? "" : ". The server's resource pack is not loaded ("
+                    + failure.toLowerCase(Locale.ROOT).replace('_', ' ')
+                    + "), so anything the server draws with custom glyphs is a missing-character box"
+                    + " in this frame rather than what a player would see";
         }
 
         private static byte[] encode(NativeImage image) throws Exception {

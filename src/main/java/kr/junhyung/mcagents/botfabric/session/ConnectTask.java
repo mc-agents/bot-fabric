@@ -43,6 +43,14 @@ public final class ConnectTask implements Task {
         Minecraft minecraft = Mc.client();
         ServerAddress target = new ServerAddress(host, port);
         ServerData data = new ServerData(username + "@" + host, host + ":" + port, ServerData.Type.OTHER);
+        /*
+        Without this the client asks. A server that requires its pack puts up "Proceed / Disconnect"
+        during the join, nobody clicks it, and join-server gives up with a spawn timeout while the
+        client sits on a screen -- which is what a real server did, and what a screenshot of the
+        stuck bot showed in one call. A bot has no one to ask, and the pack is the whole interface
+        on a server that draws with custom glyphs.
+        */
+        data.setResourcePackStatus(ServerData.ServerPackStatus.ENABLED);
         ConnectScreen.startConnecting(new TitleScreen(), minecraft, target, data, false, null);
     }
 
