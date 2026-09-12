@@ -45,7 +45,9 @@ public final class FindBlocksTool extends ReadTool {
         }
 
         JsonObject data = new JsonObject();
-        data.addProperty("blockType", wanted);
+        /* The filter as the caller wrote it, namespace and all. Echoing the stripped form made
+           the answer say diamond_block where the caller had asked for minecraft:diamond_block. */
+        data.add("blockType", args.get("blockType"));
         data.addProperty("maxDistance", args.get("maxDistance").getAsDouble());
         data.add("positions", positions);
         return data;

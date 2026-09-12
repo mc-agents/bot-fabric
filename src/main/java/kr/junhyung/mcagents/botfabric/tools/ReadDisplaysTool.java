@@ -9,6 +9,7 @@ import kr.junhyung.mcagents.botfabric.Mc;
 import kr.junhyung.mcagents.botfabric.tool.ReadTool;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 
 /**
@@ -23,6 +24,18 @@ public final class ReadDisplaysTool extends ReadTool {
         super("read-displays");
     }
 
+    /**
+     * What the thing says. A text display keeps its text in render state and carries no custom name,
+     * so falling back to the name gave "text_display" where a hologram plainly read something else.
+     * Render state arrives with the entity's data and can be a tick behind it.
+     */
+    private static String shown(Entity entity) {
+        if (entity instanceof Display.TextDisplay text && text.textRenderState() != null) {
+            return text.textRenderState().text().getString();
+        }
+        return Entities.label(entity);
+    }
+
     @Override
     protected JsonObject read(JsonObject args) {
         double maxDistance = args.get("maxDistance").getAsDouble();
@@ -35,7 +48,7 @@ public final class ReadDisplaysTool extends ReadTool {
             if (entity == player || entity.distanceTo(player) > maxDistance) {
                 continue;
             }
-            if (entity.hasCustomName() || entity instanceof net.minecraft.world.entity.Display.TextDisplay) {
+            if (entity.hasCustomName() || entity instanceof Display.TextDisplay) {
                 showing.add(entity);
             }
         }
@@ -44,7 +57,7 @@ public final class ReadDisplaysTool extends ReadTool {
         JsonArray displays = new JsonArray();
         for (Entity entity : showing.subList(0, Math.min(count, showing.size()))) {
             JsonObject display = new JsonObject();
-            display.addProperty("text", Entities.label(entity));
+            display.addProperty("text", shown(entity));
             display.addProperty("entity", BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).getPath());
             display.add("position", Positions.json(entity.position()));
             display.addProperty("distance", Math.round(entity.distanceTo(player) * 10.0) / 10.0);

@@ -77,6 +77,11 @@ public final class Session {
         if (player == null || connection == null) {
             return;
         }
+        /* The brand comes in as a plugin message during login, and it is what tells a caller it is
+           looking at Paper rather than vanilla. The other kind of bot has always sent it. */
+        if (connection.serverBrand() != null) {
+            status.addProperty("serverBrand", connection.serverBrand());
+        }
         if (minecraft.gameMode != null) {
             status.addProperty("gameMode", minecraft.gameMode.getPlayerMode().getName());
         }

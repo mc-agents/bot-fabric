@@ -1,11 +1,11 @@
 package kr.junhyung.mcagents.botfabric.mixin;
 
 import kr.junhyung.mcagents.botfabric.nav.Steering;
+import net.minecraft.client.player.ClientInput;
 import net.minecraft.client.player.KeyboardInput;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.phys.Vec2;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -20,15 +20,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *
  * <p>{@code moveVector} is rebuilt here rather than left alone, because it is what the movement
  * code actually reads: replacing only the key presses moves nothing.
+ *
+ * <p>Extending {@link ClientInput} is how the two fields are reached. They are declared there and
+ * not on the target, and {@code @Shadow} only looks at the target class -- which the client says at
+ * the moment it applies the mixin, by refusing to load and dropping the connection.
  */
 @Mixin(KeyboardInput.class)
-public abstract class KeyboardInputMixin {
-
-    @Shadow
-    public Input keyPresses;
-
-    @Shadow
-    protected Vec2 moveVector;
+public abstract class KeyboardInputMixin extends ClientInput {
 
     @Inject(method = "tick", at = @At("TAIL"))
     private void botfabric$steer(CallbackInfo info) {
@@ -38,8 +36,8 @@ public abstract class KeyboardInputMixin {
             return;
         }
 
-        keyPresses = wanted;
-        moveVector = new Vec2(impulse(wanted.left(), wanted.right()),
+        this.keyPresses = wanted;
+        this.moveVector = new Vec2(impulse(wanted.left(), wanted.right()),
                 impulse(wanted.backward(), wanted.forward())).normalized();
     }
 
