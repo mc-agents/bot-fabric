@@ -6,9 +6,8 @@ The contract both speak lives in [`mcp-server/docs/bot-protocol.md`](https://git
 and the plan it comes from is `mcp-server/docs/architecture.md`.
 
 This bot exists for the things a reimplementation of the client cannot do: **see the screen** and
-**press a dialog button**. Both are proved below. It is not yet a replacement for the mineflayer
-bot — it implements seven tools out of the catalogue's sixty-four, and says nothing about the
-rest, which is how the protocol expects a bot to grow.
+**press a dialog button**. Both are proved below. It now answers forty-two of the forty-six tools a
+bot is asked for, and says nothing about the rest, which is how the protocol expects a bot to grow.
 
 ## What was proved
 
@@ -129,18 +128,29 @@ Chat, ticks, connection lifecycle and screens are all Fabric API.
 
 ## Tools
 
-Seven, out of sixty-four in the catalogue. The rest are simply not reported, and the protocol
-treats unreported and unimplemented the same way on purpose.
+Forty-two of the forty-six a fabric bot is asked for. The rest of the catalogue's sixty-four are
+answered by mcp-server from its own buffers and never reach a bot at all. What is not reported is
+not offered, and the protocol treats unreported and unimplemented the same way on purpose.
+
+The four not answered yet:
+
+| tool | why |
+| --- | --- |
+| `can-craft`, `get-recipe`, `list-recipes` | a client is told the recipes its book holds and no others, so a "no recipe" answer would be a lie about the server rather than a report of it. `craft-item` works because it can say so in its refusal |
+| `switch-server` | no proxy in the dev environment to write it against, and guessing at a proxy's replies is how the other bot ended up with the dialog problem |
+
+Everything else is here: reading the world and the HUD, walking, digging and placing, windows and
+slots, crafting and smelting, fishing, and the two this bot exists for.
+
+The ones worth naming:
 
 | tool | notes |
 | --- | --- |
-| `get-position` | structured; block position, exact position, facing, dimension |
-| `send-chat` | a leading `/` routes to `sendCommand` |
-| `run-command` | sends, then collects the server's reply for `collectMs` |
-| `read-window` | every filled slot of an open container, with name segments and lore |
-| `wait-ticks` | |
 | `screenshot` | PNG blob, scaled to the requested size |
 | `press-dialog-button` | matches a label exactly, then by substring |
+| `craft-item` | the server places the recipe; the answer is what the inventory gained |
+| `fish` | the bite is the hook's own synced flag, not a splash somebody guessed at |
+| `move-to-position` | straight at the target, stepping up a block; a wall is reported, not waited out |
 
 Text crosses the wire as segments — `{text, font?, color?}` — with the font named, because
 which font a piece of HUD is drawn in is game knowledge and joining it into a display string is
@@ -239,8 +249,12 @@ set them: `./gradlew runClient -Prpc.port=8766`.
 
 ## Known limits
 
-- **Seven tools.** `unsupported` is the honest answer for the rest, and the server drops them
-  from the session when it hears it.
+- **Four tools are not answered.** The three recipe ones and `switch-server`, for the reasons in
+  the table above. Not reporting them is the honest answer, and the server never offers a caller a
+  tool no bot has claimed.
+- **No pathfinding.** `move-to-position` walks straight at the target and steps up one block. It
+  does not go around a wall, and says how far it got instead of waiting out its timeout. Baritone
+  would mean an unofficial fork for 26.x, which is how the mineflayer problem started.
 - **No authentication on the RPC link.** Same decision as `bot-mineflayer`: the port is meant to
   be reachable only by `mcp-server`.
 - **Offline mode only**, and commands that need a chat signature cannot be run from a dialog
