@@ -9,6 +9,8 @@ import kr.junhyung.mcagents.botfabric.Mc;
 import kr.junhyung.mcagents.botfabric.tool.ReadTool;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.registries.BuiltInRegistries;
+import kr.junhyung.mcagents.botfabric.text.Segments;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 
@@ -25,15 +27,20 @@ public final class ReadDisplaysTool extends ReadTool {
     }
 
     /**
-     * What the thing says. A text display keeps its text in render state and carries no custom name,
-     * so falling back to the name gave "text_display" where a hologram plainly read something else.
-     * Render state arrives with the entity's data and can be a tick behind it.
+     * What the thing says, as the component the client was given.
+     *
+     * <p>A text display keeps its text in render state and carries no custom name, so falling back
+     * to the name gave "text_display" where a hologram plainly read something else. Render state
+     * arrives with the entity's data and can be a tick behind it.
      */
-    private static String shown(Entity entity) {
+    private static Component component(Entity entity) {
         if (entity instanceof Display.TextDisplay text && text.textRenderState() != null) {
-            return text.textRenderState().text().getString();
+            return text.textRenderState().text();
         }
-        return Entities.label(entity);
+        if (entity.hasCustomName()) {
+            return entity.getCustomName();
+        }
+        return Component.literal(Entities.label(entity));
     }
 
     @Override
@@ -55,9 +62,29 @@ public final class ReadDisplaysTool extends ReadTool {
         showing.sort(Comparator.comparingDouble(player::distanceTo));
 
         JsonArray displays = new JsonArray();
-        for (Entity entity : showing.subList(0, Math.min(count, showing.size()))) {
+        for (Entity entity : showing) {
+            if (displays.size() >= count) {
+                break;
+            }
+
+            Component said = component(entity);
+            int glyphs = Segments.glyphPieces(said);
+            String readable = Segments.describe(said);
+
+            /*
+            A display with neither readable text nor a glyph in it is not on screen at all, and the
+            other kind of bot leaves those out for the same reason. One made only of glyphs is an
+            icon and is kept: something is there. Counting after the filter rather than before is
+            what makes count mean "this many displays" instead of "this many entities looked at".
+            */
+            if (readable.isEmpty() && glyphs == 0) {
+                continue;
+            }
+
             JsonObject display = new JsonObject();
-            display.addProperty("text", shown(entity));
+            display.addProperty("text", readable);
+            display.add("segments", Segments.of(said));
+            display.addProperty("glyphPieces", glyphs);
             display.addProperty("entity", BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).getPath());
             display.add("position", Positions.json(entity.position()));
             display.addProperty("distance", Math.round(entity.distanceTo(player) * 10.0) / 10.0);

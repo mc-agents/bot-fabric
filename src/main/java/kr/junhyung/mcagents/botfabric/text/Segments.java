@@ -24,6 +24,28 @@ public final class Segments {
      * <p>What is left is not trimmed. "Mana " and "Mana" are different pieces, and a server that
      * writes a label and a number as two components puts the space in one of them.
      */
+    /**
+     * How many pieces held nothing but glyphs.
+     *
+     * <p>On a HUD those are spacers and dropping them is right. On a display entity a piece made
+     * only of glyphs is an icon: it says something is there and there is nothing to read, which is
+     * a different thing from an empty display, and a real server's nameplates came back as blank
+     * lines until the count went with them.
+     */
+    public static int glyphPieces(Component component) {
+        if (component == null) {
+            return 0;
+        }
+        int[] count = new int[1];
+        component.visit((style, text) -> {
+            if (!text.isBlank() && GLYPHS.matcher(text).replaceAll("").isBlank()) {
+                count[0]++;
+            }
+            return Optional.empty();
+        }, Style.EMPTY);
+        return count[0];
+    }
+
     public static JsonArray of(Component component) {
         JsonArray segments = new JsonArray();
         if (component == null) {
@@ -42,6 +64,22 @@ public final class Segments {
     /* The private use area, where a resource pack puts the glyphs it draws a HUD out of. */
     private static final java.util.regex.Pattern GLYPHS =
             java.util.regex.Pattern.compile("[\\uE000-\\uF8FF]|[\\uDB80-\\uDBBF][\\uDC00-\\uDFFF]");
+
+    /**
+     * The readable pieces joined, for the {@code text} field a DTO keeps beside its segments. A
+     * caller reading the wire by hand wants one string; mcp-server writes the real sentence from
+     * the pieces.
+     */
+    public static String describe(Component component) {
+        StringBuilder said = new StringBuilder();
+        for (var element : of(component)) {
+            if (!said.isEmpty()) {
+                said.append(' ');
+            }
+            said.append(element.getAsJsonObject().get("text").getAsString());
+        }
+        return said.toString();
+    }
 
     private static JsonObject segment(Style style, String text) {
         JsonObject segment = new JsonObject();

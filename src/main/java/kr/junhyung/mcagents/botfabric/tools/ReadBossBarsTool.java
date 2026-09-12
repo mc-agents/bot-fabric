@@ -3,6 +3,7 @@ package kr.junhyung.mcagents.botfabric.tools;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.Mc;
+import kr.junhyung.mcagents.botfabric.text.Segments;
 import kr.junhyung.mcagents.botfabric.tool.ReadTool;
 import kr.junhyung.mcagents.botfabric.mixin.BossHealthOverlayAccessor;
 import net.minecraft.client.gui.components.LerpingBossEvent;
@@ -26,6 +27,8 @@ public final class ReadBossBarsTool extends ReadTool {
             bar.addProperty("progress", event.getProgress());
             bar.addProperty("color", event.getColor().getName());
             bar.addProperty("dividers", dividers(event.getOverlay()));
+            /* Stacked labels, the same as an action bar: joined into one string they run together. */
+            bar.add("segments", Segments.of(event.getName()));
             bars.add(bar);
         }
 
