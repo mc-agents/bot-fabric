@@ -29,6 +29,12 @@ final class Items {
         return name.contains(needle) || item.getHoverName().getString().toLowerCase().contains(needle);
     }
 
+    /** The canonical form, for a registry lookup: a caller may or may not have written the namespace. */
+    static String namespaced(String id) {
+        String trimmed = id.trim().toLowerCase();
+        return trimmed.contains(":") ? trimmed : "minecraft:" + trimmed;
+    }
+
     static String plain(String id) {
         String trimmed = id.trim().toLowerCase();
         return trimmed.startsWith("minecraft:") ? trimmed.substring("minecraft:".length()) : trimmed;
