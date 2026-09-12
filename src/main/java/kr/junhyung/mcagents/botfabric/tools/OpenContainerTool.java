@@ -38,9 +38,6 @@ public final class OpenContainerTool implements Tool {
             "chest", "trapped_chest", "ender_chest", "barrel", "hopper", "dispenser", "dropper",
             "shulker_box");
 
-    /** The same reach bot-mineflayer applies, measured the same way: feet to block corner. */
-    private static final double REACH = 3.0;
-
     private final TaskScheduler scheduler;
 
     public OpenContainerTool(TaskScheduler scheduler) {
@@ -102,7 +99,7 @@ public final class OpenContainerTool implements Tool {
             */
             if (++ticksSinceClick > 100) {
                 throw ToolException.refused("NO_WINDOW_OPENED",
-                        "the container at " + point() + " was clicked but no window opened within 5s");
+                        "the container at " + Positions.point(at) + " was clicked but no window opened within 5s");
             }
             return false;
         }
@@ -114,25 +111,17 @@ public final class OpenContainerTool implements Tool {
 
             if (!isContainer(block)) {
                 throw ToolException.refused("NOT_A_CONTAINER",
-                        point() + " holds " + block + ", not a container");
+                        Positions.point(at) + " holds " + block + ", not a container");
             }
+
+            Reach.require(player, at);
 
             Vec3 middle = Vec3.atCenterOf(at);
-            double distance = player.position().distanceTo(Vec3.atLowerCornerOf(at));
-            if (distance > REACH) {
-                throw ToolException.refused("OUT_OF_REACH", point() + " is "
-                        + Math.round(distance) + " blocks away and this kind of bot cannot walk to it yet."
-                        + " Teleport to it with run-command first.");
-            }
-
             player.lookAt(EntityAnchorArgument.Anchor.EYES, middle);
             Mc.client().gameMode.useItemOn(player, InteractionHand.MAIN_HAND,
                     new BlockHitResult(middle, Direction.UP, at, false));
             player.swing(InteractionHand.MAIN_HAND);
         }
 
-        private String point() {
-            return "(" + at.getX() + ", " + at.getY() + ", " + at.getZ() + ")";
-        }
     }
 }

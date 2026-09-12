@@ -13,6 +13,11 @@ final class Positions {
         return new BlockPos(args.get("x").getAsInt(), args.get("y").getAsInt(), args.get("z").getAsInt());
     }
 
+    /** How a coordinate reads in a sentence, in the shape bot-mineflayer prints it. */
+    static String point(BlockPos at) {
+        return "(" + at.getX() + ", " + at.getY() + ", " + at.getZ() + ")";
+    }
+
     static JsonObject json(BlockPos at) {
         JsonObject position = new JsonObject();
         position.addProperty("x", at.getX());
