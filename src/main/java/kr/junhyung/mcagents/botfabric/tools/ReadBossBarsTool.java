@@ -29,6 +29,8 @@ public final class ReadBossBarsTool extends ReadTool {
             bar.addProperty("dividers", dividers(event.getOverlay()));
             /* Stacked labels, the same as an action bar: joined into one string they run together. */
             bar.add("segments", Segments.of(event.getName()));
+            /* And the component itself, so the flattening lives in one place rather than two. */
+            bar.add("component", Segments.raw(event.getName()));
             bars.add(bar);
         }
 

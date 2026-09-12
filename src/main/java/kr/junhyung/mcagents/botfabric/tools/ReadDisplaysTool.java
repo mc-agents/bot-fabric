@@ -85,6 +85,7 @@ public final class ReadDisplaysTool extends ReadTool {
             display.addProperty("text", readable);
             display.add("segments", Segments.of(said));
             display.addProperty("glyphPieces", glyphs);
+            display.add("component", Segments.raw(said));
             display.addProperty("entity", BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).getPath());
             display.add("position", Positions.json(entity.position()));
             display.addProperty("distance", Math.round(entity.distanceTo(player) * 10.0) / 10.0);

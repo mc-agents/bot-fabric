@@ -1,7 +1,14 @@
 package kr.junhyung.mcagents.botfabric.text;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+import com.mojang.serialization.JsonOps;
+import kr.junhyung.mcagents.botfabric.Mc;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.Style;
@@ -79,6 +86,28 @@ public final class Segments {
             said.append(element.getAsJsonObject().get("text").getAsString());
         }
         return said.toString();
+    }
+
+    /**
+     * The component as Minecraft's own JSON, so mcp-server can do the flattening itself.
+     *
+     * <p>The game serialises it: no library sits between the client and the wire, which is what
+     * keeps following a new Minecraft version down to two files. Null when there is no connection
+     * to borrow a registry from -- the codec needs one for the item a hover event can carry.
+     */
+    public static JsonElement raw(Component component) {
+        if (component == null) {
+            return JsonNull.INSTANCE;
+        }
+
+        ClientPacketListener connection = Mc.client().getConnection();
+        if (connection == null) {
+            return JsonNull.INSTANCE;
+        }
+
+        RegistryOps<JsonElement> ops = RegistryOps.create(JsonOps.INSTANCE, connection.registryAccess());
+
+        return ComponentSerialization.CODEC.encodeStart(ops, component).result().orElse(JsonNull.INSTANCE);
     }
 
     private static JsonObject segment(Style style, String text) {
