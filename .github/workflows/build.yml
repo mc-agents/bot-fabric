@@ -219,6 +219,9 @@ jobs:
           echo "loader=$(sed -n 's/^loader_version=//p' "$properties" | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
           echo "api=$(sed -n 's/^fabric_api_version=//p' "$properties" | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
 
+      # Both images are a JRE plus packages plus jars -- nothing in them is compiled here -- so
+      # the only thing emulation has to run is apt-get.
+      - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -228,13 +231,14 @@ jobs:
 
       - uses: sigstore/cosign-installer@v3
 
-      # amd64 only, and not by preference: Mojang's manifest has no linux-arm64 LWJGL natives
-      # for 26.x, so an arm64 image would need LWJGL's own builds substituted in.
+      # Mojang's manifest lists org.lwjgl:*:natives-linux for every architecture and ships only
+      # x86_64 inside it. fetch-minecraft.py takes LWJGL's own natives-linux-arm64 from Maven
+      # Central instead, which is what makes an arm64 bot possible at all.
       - id: build
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           push: true
           provenance: mode=max
           sbom: true
@@ -261,7 +265,7 @@ jobs:
         with:
           context: .
           file: Dockerfile.assets
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           push: true
           provenance: mode=max
           sbom: true

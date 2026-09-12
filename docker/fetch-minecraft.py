@@ -23,8 +23,21 @@ from concurrent.futures import ThreadPoolExecutor
 VERSION_MANIFEST = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
 FABRIC_META = "https://meta.fabricmc.net/v2"
 DEFAULT_MAVEN = "https://maven.fabricmc.net/"
+CENTRAL = "https://repo1.maven.org/maven2/"
 
 OS_NAME = "linux"
+
+# What the manifest calls the Linux natives, and what LWJGL calls the ones for this machine.
+#
+# Mojang lists org.lwjgl:*:natives-linux for every architecture and ships only x86_64 inside it, so
+# on arm64 the client gets libraries it cannot load and dies in GLFW. LWJGL publishes
+# natives-linux-arm64 itself on Maven Central, with the same version, and its loader finds them
+# under META-INF/linux/arm64 without anything else having to change.
+#
+# jtracy is Mojang's own and has no arm64 build. It is a profiler the client loads lazily, so the
+# x86_64 jar stays on the classpath and simply never loads.
+LWJGL_GROUP = "org.lwjgl"
+LINUX_CLASSIFIER = "natives-linux"
 
 
 def fetch(url):
@@ -59,16 +72,23 @@ def sha1_of(path):
     return digest.hexdigest()
 
 
-def arch_names():
-    machine = os.uname().machine
+def normalise_arch(machine):
     if machine in ("x86_64", "amd64"):
-        return {"x86_64", "amd64"}
+        return "amd64"
     if machine in ("aarch64", "arm64"):
+        return "arm64"
+    return machine
+
+
+def arch_names(arch):
+    if arch == "amd64":
+        return {"x86_64", "amd64"}
+    if arch == "arm64":
         return {"aarch64", "arm64"}
-    return {machine}
+    return {arch}
 
 
-def allowed(rules):
+def allowed(rules, arch):
     """Mojang's rule list: last matching rule wins, default deny once rules exist."""
     if not rules:
         return True
@@ -77,12 +97,24 @@ def allowed(rules):
         target = rule.get("os", {})
         if "name" in target and target["name"] != OS_NAME:
             continue
-        if "arch" in target and target["arch"] not in arch_names():
+        if "arch" in target and target["arch"] not in arch_names(arch):
             continue
         if "features" in target:
             continue
         verdict = rule.get("action") == "allow"
     return verdict
+
+
+def lwjgl_substitute(name, arch):
+    """The arm64 natives for an LWJGL library the manifest only has x86_64 of, or None."""
+    if arch == "amd64":
+        return None
+
+    parts = name.split(":")
+    if len(parts) != 4 or parts[0] != LWJGL_GROUP or parts[3] != LINUX_CLASSIFIER:
+        return None
+
+    return ":".join(parts[:3] + [f"{LINUX_CLASSIFIER}-{arch}"])
 
 
 def maven_path(coordinate):
@@ -101,12 +133,24 @@ def resolve_version(minecraft):
     raise SystemExit(f"minecraft {minecraft} is not in the version manifest")
 
 
-def collect_mojang_libraries(meta, cache):
+def collect_mojang_libraries(meta, cache, arch):
     jars = []
     missing = []
+    substituted = []
     for library in meta["libraries"]:
-        if not allowed(library.get("rules")):
+        if not allowed(library.get("rules"), arch):
             continue
+
+        instead = lwjgl_substitute(library["name"], arch)
+        if instead is not None:
+            path = maven_path(instead)
+            target = cache / "libraries" / path
+            url = CENTRAL + path
+            download(url, target, fetch(url + ".sha1").decode().split()[0])
+            jars.append(target)
+            substituted.append(instead)
+            continue
+
         artifact = library.get("downloads", {}).get("artifact")
         if artifact is None:
             missing.append(library["name"])
@@ -114,6 +158,9 @@ def collect_mojang_libraries(meta, cache):
         target = cache / "libraries" / artifact["path"]
         download(artifact["url"], target, artifact.get("sha1"))
         jars.append(target)
+
+    if substituted:
+        print(f"{len(substituted)} LWJGL natives taken from Maven Central for {arch}", file=sys.stderr)
     if missing:
         print(f"no artifact for this platform: {', '.join(missing)}", file=sys.stderr)
     return jars
@@ -157,6 +204,9 @@ def main():
     parser.add_argument("--cache", required=True, type=pathlib.Path)
     parser.add_argument("--workers", type=int, default=16)
     parser.add_argument("--skip-assets", action="store_true")
+    parser.add_argument("--arch", choices=["amd64", "arm64"],
+                        default=normalise_arch(os.uname().machine),
+                        help="which natives to fetch; defaults to this machine's")
     args = parser.parse_args()
 
     cache = args.cache
@@ -167,7 +217,7 @@ def main():
     client = cache / "versions" / args.minecraft / "client.jar"
     download(meta["downloads"]["client"]["url"], client, meta["downloads"]["client"]["sha1"])
 
-    jars = collect_mojang_libraries(meta, cache)
+    jars = collect_mojang_libraries(meta, cache, args.arch)
     main_class, fabric_jars = collect_fabric_libraries(args.minecraft, args.loader, cache)
 
     asset_index = meta["assetIndex"]["id"]

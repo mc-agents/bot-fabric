@@ -61,7 +61,7 @@ path.
 
 ## What it costs
 
-Headless, `linux/amd64` under Xvfb at 1280x720 with Mesa llvmpipe, one bot idle in a flat world.
+Headless under Xvfb at 1280x720 with Mesa llvmpipe, one bot idle in a flat world.
 
 | | |
 | --- | --- |
@@ -245,9 +245,8 @@ set them: `./gradlew runClient -Prpc.port=8766`.
   be reachable only by `mcp-server`.
 - **Offline mode only**, and commands that need a chat signature cannot be run from a dialog
   button, as above.
-- **No `linux-arm64` LWJGL natives exist for 26.1.2.** Mojang ships `linux` (x86_64), `macos`,
-  `macos-arm64`, `windows`, `windows-arm64` and `windows-x86`. An ARM bot image has to
-  substitute LWJGL's own arm64 builds; everything here ran `linux/amd64`.
+- **`com.mojang:jtracy` has no arm64 build.** It is the profiler the client loads lazily, so on
+  arm64 the x86_64 jar stays on the classpath and simply never loads. Nothing else needs it.
 - **The client jar is not in any image.** `docker/fetch-minecraft.py` fetches it from Mojang's
   manifest into a cache volume, as an init container or on first start.
 - **One bot per process.** `Minecraft.getInstance()`, `RenderSystem` and GLFW are all JVM-global.

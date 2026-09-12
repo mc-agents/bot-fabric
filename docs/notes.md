@@ -73,11 +73,26 @@ pressed and what screen it landed on, rather than claiming the command ran.
 has to restart before `/dialog show <player> <ns>:<id>` resolves. `docker cp` of a directory
 into an existing directory nests it one level deeper, which looks exactly like the same failure.
 
-## There are no linux-arm64 natives
+## Mojang's manifest has no linux-arm64 natives, and LWJGL does
 
 Mojang's 26.1.2 manifest lists LWJGL 3.4.1 natives for `linux`, `macos`, `macos-arm64`,
-`windows`, `windows-arm64` and `windows-x86`. No `linux-arm64`. A bot image on ARM has to
-substitute LWJGL's own arm64 builds from Maven Central; everything here ran `linux/amd64`.
+`windows`, `windows-arm64` and `windows-x86`. No `linux-arm64` -- and worse than absent, it
+serves the x86_64 `natives-linux` to an arm64 machine as though it fit, so the client starts and
+dies inside GLFW.
+
+LWJGL publishes `natives-linux-arm64` for all eight artifacts itself, at the same version, on
+Maven Central. `fetch-minecraft.py --arch arm64` takes those instead, and LWJGL's loader finds
+them under `META-INF/linux/arm64` with nothing else changed. The image is multi-architecture as a
+result; measured on an arm64 machine natively, including a screenshot with the HUD and the hand
+drawn as expected.
+
+`com.mojang:jtracy` is the exception and does not matter: it is a profiler the client loads
+lazily, so the x86_64 jar stays on the classpath and never loads.
+
+Emulation is not an alternative. containerd matches the platform at pull time and refuses --
+`no match for platform in manifest` -- so the image is never unpacked and there is nothing for a
+binfmt handler to run. Docker on an arm64 Mac does run these containers through Rosetta at the
+runtime level, which is what makes the cluster case look like it might work too.
 
 ## Stray keyboard input reaches a windowed client
 
