@@ -159,6 +159,7 @@ The ones worth naming:
 | --- | --- |
 | `screenshot` | PNG blob, scaled to the requested size |
 | `press-dialog-button` | matches a label exactly, then by substring; accepts the client's own confirmation, and refuses when that confirmation will not run the command |
+| `press-container-button`, `read-container-options` | what a menu draws rather than keeps in a slot -- enchanting offers, stonecutter results, loom patterns, lectern pages -- chosen by name, with the button number only as the way out; a lectern is reached through its menu, since its screen is the book's and not a container's |
 | `click-chat` | presses what a server wrote in chat -- a quest's choices, a shop's items; the client's own in-game handler does it, so a URL cannot be opened from here |
 | `get-target-block` | the pick the crosshair is drawn from: the block, which face of it, or the entity in the way |
 | `read-dialog` | the dialog as the game serialises it, read from the packet rather than from the screen |
