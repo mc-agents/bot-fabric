@@ -6,8 +6,12 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import kr.junhyung.mcagents.botfabric.rpc.RpcClient;
 import kr.junhyung.mcagents.botfabric.text.Dialogs;
 import kr.junhyung.mcagents.botfabric.text.Segments;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.DisplayInfo;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.dialog.Dialog;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -51,6 +55,38 @@ public final class EventPump {
      */
     public void dialog(Dialog shown) {
         emit("dialog", "dialog", shown.common().title(), Dialogs.raw(shown));
+    }
+
+    /**
+     * An advancement's toast, with the id beside the title.
+     *
+     * <p>The title is what the toast draws and the id is what a caller can name: a server that
+     * grants one when a quest is done draws its title in the pack's own font.
+     *
+     * <p>The client only puts one up for an advancement with a display, but the toast itself does
+     * not insist, and this runs inside the toast manager: a missing display is skipped rather than
+     * thrown, because a feed that took the client down with it would cost more than the line.
+     */
+    public void advancement(AdvancementHolder advancement) {
+        DisplayInfo display = advancement.value().display().orElse(null);
+        if (display == null) {
+            return;
+        }
+
+        JsonObject data = new JsonObject();
+        data.addProperty("id", advancement.id().toString());
+        data.addProperty("frame", display.getType().getSerializedName());
+        data.addProperty("description", display.getDescription().getString());
+        data.add("descriptionComponent", Segments.raw(display.getDescription()));
+
+        emit("toast", "advancement", display.getTitle(), data);
+    }
+
+    public void recipe(ItemStack result) {
+        JsonObject data = new JsonObject();
+        data.addProperty("item", BuiltInRegistries.ITEM.getKey(result.getItem()).toString());
+
+        emit("toast", "recipe", result.getHoverName(), data);
     }
 
     private void emit(String kind, String source, Component message, JsonElement data) {

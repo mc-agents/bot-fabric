@@ -1,13 +1,16 @@
 package kr.junhyung.mcagents.botfabric;
 
+import kr.junhyung.mcagents.botfabric.mixin.DeathScreenAccessor;
 import kr.junhyung.mcagents.botfabric.rpc.CallContext;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.BossHealthOverlay;
+import net.minecraft.client.gui.screens.DeathScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 
 public final class Mc {
     private Mc() {
@@ -83,12 +86,47 @@ public final class Mc {
         //?}
     }
 
+    /**
+     * The player to act as, refusing a dead one.
+     *
+     * <p>A dead player is still a player: the entity stays in Minecraft.player until the server
+     * answers a respawn, so every tool that only asked whether there was one went on to walk, dig or
+     * look with a body lying behind the death screen. Nothing it did reached the server, and a walk
+     * waited out its whole deadline and reported a timeout with no word of why. Refusing here is the
+     * one place that covers every tool at once.
+     */
     public static LocalPlayer requirePlayer() {
+        LocalPlayer player = requirePlayerEvenIfDead();
+        if (dead(player)) {
+            Component cause = causeOfDeath();
+            throw ToolException.dead(cause == null ? null : cause.getString());
+        }
+        return player;
+    }
+
+    /**
+     * The player whether or not it is alive, for what a dead one can still do: say that it is dead,
+     * read the sidebar or tab list a server counts deaths on, chat, and be sent somewhere else.
+     */
+    public static LocalPlayer requirePlayerEvenIfDead() {
         LocalPlayer player = client().player;
         if (player == null) {
             throw ToolException.notInGame();
         }
         return player;
+    }
+
+    /**
+     * Dead from whichever half arrives first. The server sends the health before the packet that
+     * puts the death screen up, and a server with immediate respawn sends no screen at all.
+     */
+    public static boolean dead(LocalPlayer player) {
+        return player.isDeadOrDying() || screen() instanceof DeathScreen;
+    }
+
+    /** What the death screen says killed the bot, or null when no death screen is up. */
+    public static Component causeOfDeath() {
+        return screen() instanceof DeathScreen death ? ((DeathScreenAccessor) death).mcagents$causeOfDeath() : null;
     }
 
     public static ClientPacketListener requireConnection() {

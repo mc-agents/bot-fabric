@@ -24,6 +24,17 @@ public class ToolException extends RuntimeException {
         return new ToolException(ToolError.TOOL, "NOT_IN_GAME", "the bot is not in a world", true);
     }
 
+    /**
+     * Not retryable: nothing changes by asking again, and the one thing that does is respawn. The
+     * cause is the death screen's own line, because "dead" alone leaves a caller guessing whether
+     * the check they were running is what killed it.
+     */
+    public static ToolException dead(String cause) {
+        String why = cause == null ? "" : " (" + cause + ")";
+        return new ToolException(ToolError.TOOL, "DEAD",
+                "the bot is dead" + why + ". Call respawn to bring it back.", false);
+    }
+
     public ToolError errorClass() {
         return errorClass;
     }

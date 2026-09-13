@@ -27,7 +27,7 @@ public final class ReadScoreboardTool extends ReadTool {
         JsonObject data = new JsonObject();
         data.addProperty("slot", wanted);
 
-        Scoreboard scoreboard = Mc.requirePlayer().level().getScoreboard();
+        Scoreboard scoreboard = Mc.requirePlayerEvenIfDead().level().getScoreboard();
         Objective objective = slot == null ? null : scoreboard.getDisplayObjective(slot);
 
         /* Nothing displayed is a state, not a failure, so the server says the words. */

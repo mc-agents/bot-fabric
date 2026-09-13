@@ -3,19 +3,24 @@
   "package": "kr.junhyung.mcagents.botfabric.mixin",
   "compatibilityLevel": "JAVA_${java}",
   "client": [
+    "AdvancementToastAccessor",
     "BookEditScreenAccessor",
     "BookViewScreenAccessor",
     "BossHealthOverlayAccessor",
+    "ClientAdvancementsAccessor",
     "ClientCommonPacketListenerMixin",
     "ClientPacketListenerMixin",
     "ConfirmScreenAccessor",
+    "DeathScreenAccessor",
     "FishingHookAccessor",
     "FramerateLimitTrackerMixin",
     "KeyboardInputMixin",
     "MerchantScreenInvoker",
     "MinecraftAccessor",
+    "RecipeToastMixin",
     "ScreenInvoker",
-    "SignEditScreenAccessor"
+    "SignEditScreenAccessor",
+    "ToastManagerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

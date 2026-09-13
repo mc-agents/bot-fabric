@@ -18,7 +18,7 @@ public final class ReadPlayerListTool extends ReadTool {
 
     @Override
     protected JsonObject read(JsonObject args) {
-        String self = Mc.requirePlayer().getGameProfile().name();
+        String self = Mc.requirePlayerEvenIfDead().getGameProfile().name();
 
         JsonArray players = new JsonArray();
         for (PlayerInfo info : Mc.requireConnection().getOnlinePlayers()) {

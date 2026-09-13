@@ -1,7 +1,9 @@
 package kr.junhyung.mcagents.botfabric.event;
 
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.dialog.Dialog;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * Where a mixin hands an event to whatever is pumping them.
@@ -48,6 +50,22 @@ public final class Feeds {
         EventPump listener = pump;
         if (listener != null) {
             listener.emit("dialog", "closed", Component.literal("the dialog was closed"));
+        }
+    }
+
+    /** An advancement toast, as it is put up. */
+    public static void advancement(AdvancementHolder advancement) {
+        EventPump listener = pump;
+        if (listener != null) {
+            listener.advancement(advancement);
+        }
+    }
+
+    /** A recipe the server unlocked with a toast, one line per recipe. */
+    public static void recipe(ItemStack result) {
+        EventPump listener = pump;
+        if (listener != null) {
+            listener.recipe(result);
         }
     }
 
