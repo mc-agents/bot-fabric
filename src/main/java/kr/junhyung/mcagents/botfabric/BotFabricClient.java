@@ -53,6 +53,7 @@ import kr.junhyung.mcagents.botfabric.tools.ReadScoreboardTool;
 import kr.junhyung.mcagents.botfabric.tools.SetStanceTool;
 import kr.junhyung.mcagents.botfabric.tools.SmeltItemTool;
 import kr.junhyung.mcagents.botfabric.tools.PlaceBlockTool;
+import kr.junhyung.mcagents.botfabric.tools.ClickChatTool;
 import kr.junhyung.mcagents.botfabric.tools.PressDialogButtonTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadWindowTool;
 import kr.junhyung.mcagents.botfabric.tools.RunCommandTool;
@@ -141,6 +142,7 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new SwitchServerTool(scheduler));
         tools.register(new WaitTicksTool(scheduler));
         tools.register(new ScreenshotTool(scheduler));
+        tools.register(new ClickChatTool(scheduler));
         tools.register(new PressDialogButtonTool(scheduler));
         tools.register(new RunCommandTool());
 

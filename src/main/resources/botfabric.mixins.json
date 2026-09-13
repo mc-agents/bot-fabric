@@ -10,7 +10,8 @@
     "FishingHookAccessor",
     "FramerateLimitTrackerMixin",
     "KeyboardInputMixin",
-    "MinecraftAccessor"
+    "MinecraftAccessor",
+    "ScreenInvoker"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -27,16 +27,6 @@ import java.util.stream.Collectors;
 public final class PressDialogButtonTool implements Tool {
     private static final int MAX_WIDGETS = 256;
 
-    /*
-    The client will not run every command a dialog asks it to. One that sends chat as the player
-    needs a signature it cannot produce outside the chat screen, so the confirmation it opens
-    offers to copy the command somewhere instead of running it: pressing what is on offer runs
-    nothing. These two are what says the confirmation is about a command and whether the button on
-    it is the one that runs it.
-    */
-    private static final Component CONFIRM_TITLE = Component.translatable("multiplayer.confirm_command.title");
-    private static final Component RUN_COMMAND = Component.translatable("multiplayer.confirm_command.run_command");
-
     private static final int SETTLE_TICKS = 2;
     private static final int CONFIRM_TICKS = 60;
 
@@ -142,12 +132,9 @@ public final class PressDialogButtonTool implements Tool {
          * and runs nothing, so a press was reported as done and the command never ran.
          */
         private boolean confirm(CallContext call, ConfirmScreen screen) {
-            Button accept = ((ConfirmScreenAccessor) screen).mcagents$yesButton();
-            if (accept == null) {
-                throw ToolException.refused("NO_CONFIRM_BUTTON",
-                        "the client asked to confirm \"" + pressed + "\" but offered no button");
-            }
-            if (!accept.isActive()) {
+            Confirmation.Accepted accepted = Confirmation.accept(screen, pressed);
+
+            if (accepted == null) {
                 if (ticksSincePress > CONFIRM_TICKS) {
                     throw ToolException.refused("CONFIRM_STUCK",
                             "the confirmation for \"" + pressed + "\" never became clickable");
@@ -155,19 +142,8 @@ public final class PressDialogButtonTool implements Tool {
                 return false;
             }
 
-            String offered = accept.getMessage().getString();
-
-            if (screen.getTitle().getString().equals(CONFIRM_TITLE.getString())
-                    && !offered.equals(RUN_COMMAND.getString())) {
-                throw ToolException.refused("COMMAND_NOT_RUN", "\"" + pressed + "\" asks the client"
-                        + " to run a command and it will not: all it offers is \"" + offered + "\"."
-                        + " A command that sends chat as the player can only be run from the chat"
-                        + " screen, so a dialog action built on one does nothing when pressed. This"
-                        + " is the server's dialog to fix, not the bot's.");
-            }
-            confirmedWith = accept.getMessage().getString();
-            confirmTitle = screen.getTitle().getString();
-            accept.onPress(new MouseButtonInfo(0, 0));
+            confirmedWith = accepted.button();
+            confirmTitle = accepted.title();
             confirmed = true;
             report(call, Mc.screen());
             return true;

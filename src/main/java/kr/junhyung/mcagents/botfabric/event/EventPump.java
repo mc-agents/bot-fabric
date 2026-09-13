@@ -60,6 +60,8 @@ public final class EventPump {
         /* A proxy answers a command in chat and nowhere else, so a task can ask to hear it. */
         if (kind.equals("chat")) {
             ChatWatch.heard(message.getString());
+            /* And the component itself, because a line with a click event on it can be pressed. */
+            ChatLines.heard(message);
         }
 
         JsonObject event = new JsonObject();
