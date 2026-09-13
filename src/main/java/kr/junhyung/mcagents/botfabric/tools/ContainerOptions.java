@@ -17,6 +17,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.util.context.ContextMap;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.BeaconMenu;
 import net.minecraft.world.inventory.EnchantmentMenu;
 import net.minecraft.world.inventory.LecternMenu;
 import net.minecraft.world.inventory.LoomMenu;
@@ -44,6 +45,10 @@ import java.util.List;
  *
  * <p>A cartography table is not in this list because it has nothing to press: its menu never
  * overrides {@code clickMenuButton}, and the result appears in slot 2 as soon as both inputs are in.
+ *
+ * <p>A beacon is not in it either, though its effects are drawn the same way. They are not buttons
+ * the menu numbers: the screen keeps the chosen pair to itself and sends both at once, so they are
+ * described apart, by {@link Beacons}, and set with set-beacon-effects.
  */
 final class ContainerOptions {
 
@@ -131,6 +136,8 @@ final class ContainerOptions {
             window.add("page", JsonNull.INSTANCE);
             window.add("pageCount", JsonNull.INSTANCE);
         }
+
+        window.add("beacon", menu instanceof BeaconMenu beacon ? Beacons.describe(beacon) : JsonNull.INSTANCE);
         return window;
     }
 
@@ -224,7 +231,7 @@ final class ContainerOptions {
     }
 
     /** The path alone, the way a slot names its item: "unbreaking", not "minecraft:unbreaking". */
-    private static String id(Holder<?> holder) {
+    static String id(Holder<?> holder) {
         return holder.unwrapKey().map(key -> key.identifier().getPath()).orElse(null);
     }
 
