@@ -6,8 +6,8 @@ import kr.junhyung.mcagents.botfabric.tool.ReadTool;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
 /**
- * What the open menu offers to press: the part of an enchanting table, a stonecutter, a loom or a
- * lectern that is drawn rather than kept in a slot.
+ * What the open menu offers to press: the part of an enchanting table, a stonecutter, a loom, a
+ * lectern or a beacon that is drawn rather than kept in a slot.
  *
  * <p>Not part of read-window. That DTO is built once in {@link Windows} and shared by four tools so
  * that they cannot drift apart, and every one of them describes slots; a lectern has no container

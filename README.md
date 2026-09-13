@@ -141,6 +141,7 @@ afterwards.
 | `KeyboardInputMixin` | lets a task hold a key down, which is how walking and jumping are done |
 | `FishingHookAccessor` | the hook's own synced "biting" flag, rather than guessing from a splash |
 | `ConfirmScreenAccessor` | the button a confirmation calls yes, which is not the first one on it |
+| `BundleMouseActionsInvoker` | the selection a scroll over a bundle lands on, without counting notches of a wheel that keeps fractions |
 
 Chat, ticks, connection lifecycle and screens are all Fabric API.
 
@@ -160,6 +161,9 @@ The ones worth naming:
 | `screenshot` | PNG blob, scaled to the requested size |
 | `press-dialog-button` | matches a label exactly, then by substring; accepts the client's own confirmation, and refuses when that confirmation will not run the command |
 | `press-container-button`, `read-container-options` | what a menu draws rather than keeps in a slot -- enchanting offers, stonecutter results, loom patterns, lectern pages -- chosen by name, with the button number only as the way out; a lectern is reached through its menu, since its screen is the book's and not a container's |
+| `set-beacon-effects` | a beacon's effects are icons the screen sends as a pair, not buttons; what its pyramid is too low for is refused before sending, since 26.2 drops a client that sends it and 26.1.2 applies it |
+| `select-bundle-item` | the call a scroll over a bundle's tooltip makes, with the index it would have scrolled to; the answer lists what is inside, which read-window does not |
+| `pick-block` | a middle-click is only a position the server checks against reach, so the bot walks up and faces it, and answers with the hand the server sent back |
 | `click-chat` | presses what a server wrote in chat -- a quest's choices, a shop's items; the client's own in-game handler does it, so a URL cannot be opened from here |
 | `get-target-block` | the pick the crosshair is drawn from: the block, which face of it, or the entity in the way |
 | `read-dialog` | the dialog as the game serialises it, read from the packet rather than from the screen |

@@ -8,6 +8,7 @@
     "BookEditScreenAccessor",
     "BookViewScreenAccessor",
     "BossHealthOverlayAccessor",
+    "BundleMouseActionsInvoker",
     "ClientAdvancementsAccessor",
     "ClientCommonPacketListenerMixin",
     "ClientPacketListenerMixin",

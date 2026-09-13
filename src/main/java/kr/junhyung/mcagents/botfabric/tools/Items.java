@@ -32,6 +32,11 @@ final class Items {
         return entry;
     }
 
+    /** The registry path, which is how a sentence names an item: "iron_ingot", not "Iron Ingot". */
+    static String name(ItemStack item) {
+        return BuiltInRegistries.ITEM.getKey(item.getItem()).getPath();
+    }
+
     /**
      * Whether a stack answers to what a caller typed. The namespace is dropped first, because
      * "minecraft:diamond" and "diamond" are the same thing to somebody looking for a diamond.
