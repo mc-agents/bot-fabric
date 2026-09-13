@@ -160,6 +160,7 @@ The ones worth naming:
 | `screenshot` | PNG blob, scaled to the requested size |
 | `press-dialog-button` | matches a label exactly, then by substring; accepts the client's own confirmation, and refuses when that confirmation will not run the command |
 | `click-chat` | presses what a server wrote in chat -- a quest's choices, a shop's items; the client's own in-game handler does it, so a URL cannot be opened from here |
+| `get-target-block` | the pick the crosshair is drawn from: the block, which face of it, or the entity in the way |
 | `read-dialog` | the dialog as the game serialises it, read from the packet rather than from the screen |
 | `craft-item` | the server places the recipe; a grid bigger than the player's own says so rather than placing where it cannot fit, and the answer is what the inventory gained |
 | `find-blocks` | the whole cube read, sorted by real distance; the outward walk is what lets it stop early, not what orders the answer |

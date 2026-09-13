@@ -32,6 +32,7 @@ import kr.junhyung.mcagents.botfabric.tools.FindEntityTool;
 import kr.junhyung.mcagents.botfabric.tools.FindItemTool;
 import kr.junhyung.mcagents.botfabric.tools.FlyToTool;
 import kr.junhyung.mcagents.botfabric.tools.GetBlockInfoTool;
+import kr.junhyung.mcagents.botfabric.tools.GetTargetBlockTool;
 import kr.junhyung.mcagents.botfabric.tools.GetRecipeTool;
 import kr.junhyung.mcagents.botfabric.tools.GiveItemTool;
 import kr.junhyung.mcagents.botfabric.tools.GetPlayerStateTool;
@@ -107,6 +108,7 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new ListInventoryTool());
         tools.register(new FindItemTool());
         tools.register(new GetBlockInfoTool());
+        tools.register(new GetTargetBlockTool());
         tools.register(new FindBlocksTool());
         tools.register(new ReadBlockEntityTool());
         tools.register(new FindEntityTool());
