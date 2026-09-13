@@ -12,6 +12,7 @@
     "FishingHookAccessor",
     "FramerateLimitTrackerMixin",
     "KeyboardInputMixin",
+    "MerchantScreenInvoker",
     "MinecraftAccessor",
     "ScreenInvoker",
     "SignEditScreenAccessor"
