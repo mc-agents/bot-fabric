@@ -293,7 +293,14 @@ public final class TypeTextTool extends ActionTool {
         */
         sign.onClose();
 
-        return "wrote the sign, which now reads " + written
+        /*
+        The face is named because the editor opens on whichever side was clicked: a bot that walked
+        round behind a sign wrote on its back, and a sentence saying only "wrote the sign" read the
+        same as one that had written the front.
+        */
+        String face = editor.mcagents$isFrontText() ? "front" : "back";
+
+        return "wrote the " + face + " of the sign, which now reads " + written
                 + ". Closing the editor is what sends it, and it is closed" + refusedNote(refused);
     }
 

@@ -20,4 +20,8 @@ public interface SignEditScreenAccessor {
 
     @Accessor("line")
     int mcagents$line();
+
+    /** Which face is being written, which depends on the side the sign was clicked from. */
+    @Accessor("isFrontText")
+    boolean mcagents$isFrontText();
 }
