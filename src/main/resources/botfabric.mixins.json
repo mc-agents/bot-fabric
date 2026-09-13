@@ -11,6 +11,7 @@
     "ClientAdvancementsAccessor",
     "ClientCommonPacketListenerMixin",
     "ClientPacketListenerMixin",
+    "CommandBlockEditScreenAccessor",
     "ConfirmScreenAccessor",
     "CreativeModeInventoryScreenInvoker",
     "DeathScreenAccessor",
@@ -22,6 +23,7 @@
     "RecipeToastMixin",
     "ScreenInvoker",
     "SignEditScreenAccessor",
+    "StatsCounterAccessor",
     "ToastManagerMixin"
   ],
   "injectors": {

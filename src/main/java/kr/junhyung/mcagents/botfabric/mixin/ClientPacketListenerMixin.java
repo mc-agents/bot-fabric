@@ -1,8 +1,10 @@
 package kr.junhyung.mcagents.botfabric.mixin;
 
 import kr.junhyung.mcagents.botfabric.event.Feeds;
+import kr.junhyung.mcagents.botfabric.tools.StatsAnswers;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.protocol.game.ClientboundAwardStatsPacket;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
@@ -25,6 +27,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *
  * <p>Read from the packet rather than from the screen: a title is drawn for a few seconds and then
  * gone, and a reader that waited for the HUD would be asking whether it happened to still be up.
+ *
+ * <p>And the statistics, which are not a feed but have the same problem: nothing says they arrived.
+ * The client holds the last ones it was sent, so read-stats has to know when the answer to its own
+ * request is in, and the tail of the handler is the first point the new values are there to read.
  */
 @Mixin(ClientPacketListener.class)
 public class ClientPacketListenerMixin {
@@ -53,5 +59,10 @@ public class ClientPacketListenerMixin {
     private void botfabric$particle(ClientboundLevelParticlesPacket packet, CallbackInfo info) {
         Feeds.effect("particle",
                 BuiltInRegistries.PARTICLE_TYPE.getKey(packet.getParticle().getType()).toString());
+    }
+
+    @Inject(method = "handleAwardStats", at = @At("TAIL"))
+    private void botfabric$stats(ClientboundAwardStatsPacket packet, CallbackInfo info) {
+        StatsAnswers.CLIENT.answered(this);
     }
 }

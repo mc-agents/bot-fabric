@@ -62,6 +62,7 @@ public final class CatalogHashes {
             entry("read-displays", "sha256:b3e9baab003ac5f71d20062769363d14c389eaf32bcdc178262699127f884afb"),
             entry("read-player-list", "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"),
             entry("read-scoreboard", "sha256:4fb4263637a58cb79437f6cee058c25c99acbe77297b9f5bfd22f8af5863b2b4"),
+            entry("read-stats", "sha256:571e9c076689a55d2f803704710b59dbf81ddfc27cc2dd3af919f34982502a55"),
             entry("read-trades", "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"),
             entry("read-window", "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"),
             entry("respawn", "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"),

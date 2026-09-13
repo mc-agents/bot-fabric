@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.mojang.blaze3d.platform.InputConstants;
 import kr.junhyung.mcagents.botfabric.Mc;
 import kr.junhyung.mcagents.botfabric.mixin.BookEditScreenAccessor;
+import kr.junhyung.mcagents.botfabric.mixin.CommandBlockEditScreenAccessor;
 import kr.junhyung.mcagents.botfabric.mixin.SignEditScreenAccessor;
 import kr.junhyung.mcagents.botfabric.tool.ActionTool;
 import kr.junhyung.mcagents.botfabric.tool.Args;
@@ -17,6 +18,7 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractSignEditScreen;
 import net.minecraft.client.gui.screens.inventory.BookEditScreen;
+import net.minecraft.client.gui.screens.inventory.CommandBlockEditScreen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 
@@ -69,6 +71,17 @@ public final class TypeTextTool extends ActionTool {
         }
         if (screen instanceof BookEditScreen book) {
             return typeIntoBook(book, text, field, replace);
+        }
+        /*
+        The editor opens before the server has sent the block's command, and when it arrives it is
+        written over the field. Typed into before then, the field reads right, Done sends the old
+        command, and nothing says the text was ever lost.
+        */
+        if (screen instanceof CommandBlockEditScreen editor
+                && !((CommandBlockEditScreenAccessor) editor).mcagents$doneButton().isActive()) {
+            throw ToolException.refused("EDITOR_NOT_LOADED", "the command block editor is still waiting"
+                    + " for the server to send the block's command, which replaces whatever is typed"
+                    + " before it arrives. Wait a few ticks and type again.");
         }
         return typeIntoField(screen, text, field, replace);
     }
