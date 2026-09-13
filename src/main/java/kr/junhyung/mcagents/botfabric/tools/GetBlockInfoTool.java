@@ -18,7 +18,7 @@ public final class GetBlockInfoTool extends ReadTool {
     @Override
     protected JsonObject read(JsonObject args) {
         BlockPos at = Positions.of(args);
-        BlockState state = Mc.requirePlayer().level().getBlockState(at);
+        BlockState state = Mc.requirePlayerEvenIfDead().level().getBlockState(at);
 
         JsonObject block = new JsonObject();
         block.addProperty("name", BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath());

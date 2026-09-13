@@ -48,7 +48,7 @@ public final class ReadDisplaysTool extends ReadTool {
         double maxDistance = args.get("maxDistance").getAsDouble();
         int count = args.get("count").getAsInt();
 
-        LocalPlayer player = Mc.requirePlayer();
+        LocalPlayer player = Mc.requirePlayerEvenIfDead();
 
         List<Entity> showing = new ArrayList<>();
         for (Entity entity : Mc.client().level.entitiesForRendering()) {

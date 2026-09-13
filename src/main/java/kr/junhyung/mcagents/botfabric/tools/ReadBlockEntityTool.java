@@ -31,7 +31,7 @@ public final class ReadBlockEntityTool extends ReadTool {
 
         JsonObject data = new JsonObject();
         data.addProperty("block", BuiltInRegistries.BLOCK
-                .getKey(Mc.requirePlayer().level().getBlockState(at).getBlock()).getPath());
+                .getKey(Mc.requirePlayerEvenIfDead().level().getBlockState(at).getBlock()).getPath());
         data.add("position", Positions.json(at));
 
         BlockEntity entity = Mc.client().level.getBlockEntity(at);

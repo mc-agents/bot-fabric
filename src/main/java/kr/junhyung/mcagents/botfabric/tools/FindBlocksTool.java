@@ -50,8 +50,8 @@ public final class FindBlocksTool extends ReadTool {
         Block block = BuiltInRegistries.BLOCK.getValue(
                 net.minecraft.resources.Identifier.withDefaultNamespace(wanted));
 
-        Level level = Mc.requirePlayer().level();
-        BlockPos from = Mc.requirePlayer().blockPosition();
+        Level level = Mc.requirePlayerEvenIfDead().level();
+        BlockPos from = Mc.requirePlayerEvenIfDead().blockPosition();
 
         JsonArray positions = new JsonArray();
         for (BlockPos at : nearest(level, block, from, maxDistance, radius, count)) {

@@ -21,7 +21,7 @@ public final class GetWorldStateTool extends ReadTool {
 
     @Override
     protected JsonObject read(JsonObject args) {
-        Level level = Mc.requirePlayer().level();
+        Level level = Mc.requirePlayerEvenIfDead().level();
         long time = level.getDefaultClockTime();
 
         JsonObject data = new JsonObject();

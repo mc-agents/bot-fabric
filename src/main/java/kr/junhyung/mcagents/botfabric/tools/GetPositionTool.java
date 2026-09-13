@@ -22,7 +22,7 @@ public final class GetPositionTool implements Tool {
     @Override
     public void invoke(CallContext call, JsonObject args) {
         Mc.immediate(call, () -> {
-            LocalPlayer player = Mc.requirePlayer();
+            LocalPlayer player = Mc.requirePlayerEvenIfDead();
             BlockPos block = player.blockPosition();
 
             /*

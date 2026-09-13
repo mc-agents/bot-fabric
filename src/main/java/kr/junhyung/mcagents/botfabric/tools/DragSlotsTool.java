@@ -10,8 +10,6 @@ import kr.junhyung.mcagents.botfabric.tool.Args;
 import kr.junhyung.mcagents.botfabric.tool.ReadTool;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.multiplayer.MultiPlayerGameMode;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
@@ -54,7 +52,7 @@ public final class DragSlotsTool extends ReadTool {
 
         AbstractContainerScreen<?> container = Windows.require();
         AbstractContainerMenu menu = container.getMenu();
-        Player player = Mc.requirePlayer();
+        Mc.requirePlayer();
         List<Integer> slots = slots(args, menu);
 
         List<ItemStack> before = new ArrayList<>(slots.size());
@@ -63,15 +61,11 @@ public final class DragSlotsTool extends ReadTool {
         }
         ItemStack carried = menu.getCarried().copy();
 
-        MultiPlayerGameMode gameMode = Mc.client().gameMode;
-        gameMode.handleContainerInput(menu.containerId, OUTSIDE,
-                AbstractContainerMenu.getQuickcraftMask(START, kind), ContainerInput.QUICK_CRAFT, player);
+        Windows.click(container, OUTSIDE, AbstractContainerMenu.getQuickcraftMask(START, kind), ContainerInput.QUICK_CRAFT);
         for (int slot : slots) {
-            gameMode.handleContainerInput(menu.containerId, slot,
-                    AbstractContainerMenu.getQuickcraftMask(ADD_SLOT, kind), ContainerInput.QUICK_CRAFT, player);
+            Windows.click(container, slot, AbstractContainerMenu.getQuickcraftMask(ADD_SLOT, kind), ContainerInput.QUICK_CRAFT);
         }
-        gameMode.handleContainerInput(menu.containerId, OUTSIDE,
-                AbstractContainerMenu.getQuickcraftMask(END, kind), ContainerInput.QUICK_CRAFT, player);
+        Windows.click(container, OUTSIDE, AbstractContainerMenu.getQuickcraftMask(END, kind), ContainerInput.QUICK_CRAFT);
 
         JsonArray results = new JsonArray();
         for (int i = 0; i < slots.size(); i++) {

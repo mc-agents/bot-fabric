@@ -43,6 +43,7 @@ import kr.junhyung.mcagents.botfabric.tools.ListRecipesTool;
 import kr.junhyung.mcagents.botfabric.tools.MoveInDirectionTool;
 import kr.junhyung.mcagents.botfabric.tools.MoveToPositionTool;
 import kr.junhyung.mcagents.botfabric.tools.OpenContainerTool;
+import kr.junhyung.mcagents.botfabric.tools.OpenInventoryTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadBlockEntityTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadDisplaysTool;
 import kr.junhyung.mcagents.botfabric.tools.GetPositionTool;
@@ -137,6 +138,7 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new DragSlotsTool());
         tools.register(new DropHeldItemTool());
         tools.register(new OpenContainerTool(scheduler));
+        tools.register(new OpenInventoryTool());
         tools.register(new WaitForWindowTool(scheduler));
         tools.register(new ActivateBlockTool(scheduler));
         tools.register(new InteractEntityTool(scheduler));

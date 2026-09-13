@@ -23,7 +23,7 @@ public final class FindEntityTool extends ReadTool {
         double maxDistance = args.get("maxDistance").getAsDouble();
         int count = args.get("count").getAsInt();
 
-        LocalPlayer player = Mc.requirePlayer();
+        LocalPlayer player = Mc.requirePlayerEvenIfDead();
 
         List<Entity> found = new ArrayList<>();
         for (Entity entity : Mc.client().level.entitiesForRendering()) {

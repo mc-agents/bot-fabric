@@ -21,7 +21,7 @@ public final class FindItemTool extends ReadTool {
         JsonObject data = new JsonObject();
         data.addProperty("query", query);
 
-        for (Slot slot : Mc.requirePlayer().inventoryMenu.slots) {
+        for (Slot slot : Mc.requirePlayerEvenIfDead().inventoryMenu.slots) {
             ItemStack item = slot.getItem();
             if (!item.isEmpty() && Items.matches(item, query)) {
                 data.add("item", Items.stack(item, slot.index));

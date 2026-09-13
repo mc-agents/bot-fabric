@@ -5,13 +5,17 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.Mc;
+import kr.junhyung.mcagents.botfabric.mixin.AbstractContainerScreenInvoker;
 import kr.junhyung.mcagents.botfabric.text.Segments;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemLore;
@@ -35,6 +39,38 @@ final class Windows {
     /** The open container screen, or null. Nothing being open is a state and not a failure. */
     static AbstractContainerScreen<?> open() {
         return Mc.screen() instanceof AbstractContainerScreen<?> container ? container : null;
+    }
+
+    /**
+     * Click a slot the way the mouse does: through the screen, which decides what the click means.
+     *
+     * <p>The default is the container packet, so for a chest nothing changes. The screens that
+     * mean something else by a click are the ones a bot got wrong by sending the packet itself --
+     * the creative inventory, whose slots are an item picker, and a crafter, which toggles an empty
+     * slot rather than clicking it. {@code slot} is -999 for outside the window, as the protocol has
+     * it.
+     */
+    static void click(AbstractContainerScreen<?> screen, int slot, int button, ContainerInput input) {
+        Slot target = slot >= 0 ? screen.getMenu().getSlot(slot) : null;
+        ((AbstractContainerScreenInvoker) screen).mcagents$slotClicked(target, slot, button, input);
+    }
+
+    /**
+     * The registry name of a menu's type.
+     *
+     * <p>The player's own inventory and the creative item picker are built without a type, and
+     * asking either for one throws. Nothing opened them before open-inventory, so every tool that
+     * described a window failed on them with "Unable to construct this menu by type" -- and left the
+     * screen open for whatever came next.
+     */
+    static String type(AbstractContainerMenu menu) {
+        if (menu instanceof InventoryMenu) {
+            return "minecraft:inventory";
+        }
+        if (menu instanceof CreativeModeInventoryScreen.ItemPickerMenu) {
+            return "minecraft:creative_inventory";
+        }
+        return BuiltInRegistries.MENU.getKey(menu.getType()).toString();
     }
 
     static AbstractContainerScreen<?> require() {
@@ -67,7 +103,7 @@ final class Windows {
         window.addProperty("title", title.getString());
         /* A menu header is drawn in the pack's own font as often as an item name is. */
         window.add("titleComponent", Segments.raw(title));
-        window.addProperty("type", BuiltInRegistries.MENU.getKey(menu.getType()).toString());
+        window.addProperty("type", type(menu));
         window.addProperty("slotCount", slotCount);
         window.add("containerSlots", range(0, Math.max(inventoryStart - 1, 0)));
         window.add("inventorySlots", range(inventoryStart, Math.max(slotCount - 1, 0)));

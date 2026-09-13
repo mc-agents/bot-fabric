@@ -62,7 +62,7 @@ public final class ClickSlotTool extends ReadTool {
         ItemStack before = menu.getSlot(slot).getItem().copy();
         ItemStack swappedBefore = swapIndex < 0 ? null : player.getInventory().getItem(swapIndex).copy();
 
-        Mc.client().gameMode.handleContainerInput(menu.containerId, slot, input.button(), input.type(), player);
+        Windows.click(container, slot, input.button(), input.type());
 
         JsonObject data = new JsonObject();
         data.addProperty("slot", slot);

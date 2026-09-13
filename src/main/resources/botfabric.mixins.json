@@ -3,6 +3,7 @@
   "package": "kr.junhyung.mcagents.botfabric.mixin",
   "compatibilityLevel": "JAVA_${java}",
   "client": [
+    "AbstractContainerScreenInvoker",
     "AdvancementToastAccessor",
     "BookEditScreenAccessor",
     "BookViewScreenAccessor",
@@ -11,6 +12,7 @@
     "ClientCommonPacketListenerMixin",
     "ClientPacketListenerMixin",
     "ConfirmScreenAccessor",
+    "CreativeModeInventoryScreenInvoker",
     "DeathScreenAccessor",
     "FishingHookAccessor",
     "FramerateLimitTrackerMixin",

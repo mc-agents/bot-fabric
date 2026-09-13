@@ -107,6 +107,10 @@ public final class Mc {
     /**
      * The player whether or not it is alive, for what a dead one can still do: say that it is dead,
      * read the sidebar or tab list a server counts deaths on, chat, and be sent somewhere else.
+     *
+     * <p>And read. What a death did is read after it: whether the inventory went with the body or
+     * stayed, where the body is, what is standing next to it. Refusing those behind the death
+     * screen left keepInventory with no way to be checked at all.
      */
     public static LocalPlayer requirePlayerEvenIfDead() {
         LocalPlayer player = client().player;

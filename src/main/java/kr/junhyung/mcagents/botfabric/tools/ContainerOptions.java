@@ -97,7 +97,7 @@ final class ContainerOptions {
     }
 
     static String type(AbstractContainerMenu menu) {
-        return BuiltInRegistries.MENU.getKey(menu.getType()).toString();
+        return Windows.type(menu);
     }
 
     static List<Option> of(AbstractContainerMenu menu) {

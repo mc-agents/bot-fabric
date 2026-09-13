@@ -25,7 +25,7 @@ public final class ListInventoryTool extends ReadTool {
     protected JsonObject read(JsonObject args) {
         JsonArray items = new JsonArray();
 
-        for (Slot slot : Mc.requirePlayer().inventoryMenu.slots) {
+        for (Slot slot : Mc.requirePlayerEvenIfDead().inventoryMenu.slots) {
             ItemStack item = slot.getItem();
             if (!item.isEmpty()) {
                 items.add(Items.stack(item, slot.index));
