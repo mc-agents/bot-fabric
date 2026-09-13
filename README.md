@@ -1,9 +1,9 @@
 # bot-fabric
 
-A real Minecraft client, driven over the mc-agents bot RPC protocol. It is one of the two bots
-behind the same MCP surface; the other is [`bot-mineflayer`](https://github.com/mc-agents/bot-mineflayer).
-The contract both speak lives in [`mcp-server/docs/bot-protocol.md`](https://github.com/mc-agents/mcp-server/blob/main/docs/bot-protocol.md),
-and the plan it comes from is `mcp-server/docs/architecture.md`.
+A real Minecraft client, driven over the mc-agents bot RPC protocol. It is the bot behind the MCP
+surface; there was a second one, `bot-mineflayer`, and it is archived. The contract lives in
+[`mcp-server/docs/bot-protocol.md`](https://github.com/mc-agents/mcp-server/blob/main/docs/bot-protocol.md),
+and the plan it comes from, with what became of it, is `mcp-server/docs/architecture.md`.
 
 This bot exists for the things a reimplementation of the client cannot do: **see the screen** and
 **press a dialog button**. Both are proved below. It answers every one of the forty-six tools a bot
@@ -24,7 +24,7 @@ things llvmpipe cost were sound (no OpenAL device) and the narrator, neither of 
 needs.
 
 Non-default fonts render. A title in `minecraft:illageralt` and a subtitle in `minecraft:alt`
-both come back drawn as runes rather than as latin text, which is the thing the mineflayer bot
+both come back drawn as runes rather than as latin text, which is the thing a reimplemented client
 cannot check at all — it reads the text and has no idea what it looks like. A custom font from a
 server resource pack goes through the same `FontManager` path; only the vanilla alternate fonts
 were exercised here.
@@ -40,7 +40,7 @@ The buttons are not direct children of the screen — a dialog puts its body ins
 `ScrollableLayout`, so the search walks nested `ContainerEventHandler`s.
 
 A `dynamic/custom` action goes out as well and the connection survives it — that is the packet
-the mineflayer bot could not encode, where sending it with the wrong definition dropped the
+a reimplemented client could not encode, where sending it with the wrong definition dropped the
 link.
 
 There is one real limit, and it is Mojang's, not ours. Before sending a command from a dialog
@@ -82,8 +82,9 @@ An earlier version of this table said 253-347 MiB. That figure was wrong: five r
 architectures, in and out of a world, put the floor above a gigabyte. It is quoted here because a
 plan was written on the strength of it, and because the operator's memory request still is.
 
-The mineflayer baseline is 192 MiB a pod. One fabric bot is worth eight of them, which is the
-reason the `kind` argument exists.
+For comparison, the bot that was archived asked for 192 MiB a pod. One of these is worth eight of
+them, and that gap was the whole of the case for keeping it -- until it turned out to be a gap
+between a client with a graphics card and a client without one, rather than between two bots.
 
 The second-long floor under most calls is the frame budget. Rendering cannot be turned off —
 GLFW and GL are set up in the `Minecraft` constructor — so it runs at 1fps while idle, and a
@@ -296,9 +297,11 @@ costs. The client walked, read its action bar, crafted, and took a screenshot on
   wall, up one block, down three. What they will not do is anything a player cannot -- no flying,
   no swimming up, no breaking through -- and a target behind a door or in an unloaded chunk is
   reported as unreachable with the reason, not waited out. Baritone would mean an unofficial fork
-  for 26.x, which is how the mineflayer problem started.
-- **No authentication on the RPC link.** Same decision as `bot-mineflayer`: the port is meant to
-  be reachable only by `mcp-server`.
+  for 26.x, and an unofficial fork of a thing the game does not owe anything to is how the bot
+  this one replaced ended up where it did.
+- **No authentication on the RPC link.** The port is meant to be reachable only by `mcp-server`,
+  and a NetworkPolicy is what keeps it that way; per-bot tokens would hand the operator a secret
+  to rotate for a port that never leaves the cluster.
 - **Offline mode only**, and commands that need a chat signature cannot be run from a dialog
   button, as above.
 - **`com.mojang:jtracy` has no arm64 build.** It is the profiler the client loads lazily, so on
