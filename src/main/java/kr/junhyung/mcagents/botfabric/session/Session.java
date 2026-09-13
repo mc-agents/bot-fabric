@@ -9,7 +9,9 @@ import net.minecraft.client.User;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.network.chat.Component;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -18,6 +20,10 @@ public final class Session {
     private final RpcClient client;
     private volatile String address = "";
     private volatile String username = "";
+
+    /** What was last reported about death, so that only a change is sent. Client thread only. */
+    private boolean reportedDead;
+    private String reportedCause;
 
     public Session(RpcClient client) {
         this.client = client;
@@ -42,6 +48,36 @@ public final class Session {
         MinecraftAccessor accessor = (MinecraftAccessor) Minecraft.getInstance();
         accessor.botfabric$setUser(user);
         accessor.botfabric$setProfileFuture(CompletableFuture.completedFuture(null));
+    }
+
+    /**
+     * Report a death, and the respawn after it, as they happen.
+     *
+     * <p>A status only went out when the connection changed, and dying does not change it: a bot on
+     * the death screen stayed "ready" in get-bot-status with the health it joined with. The cause is
+     * compared too, because the health that says dead arrives a packet before the screen that says
+     * of what, and the first report would otherwise be the only one.
+     *
+     * <p>Nothing is sent without a player. A bot that has just left the world is not a bot that
+     * came back to life, and reporting "ready" on the way out would say it was.
+     */
+    public void noticeDeath() {
+        LocalPlayer player = Mc.client().player;
+        if (player == null) {
+            reportedDead = false;
+            reportedCause = null;
+            return;
+        }
+
+        boolean dead = Mc.dead(player);
+        Component cause = dead ? Mc.causeOfDeath() : null;
+        String causeText = cause == null ? null : cause.getString();
+
+        if (dead != reportedDead || !Objects.equals(causeText, reportedCause)) {
+            reportedDead = dead;
+            reportedCause = causeText;
+            report("ready");
+        }
     }
 
     public void report(String state) {
@@ -88,6 +124,12 @@ public final class Session {
         status.addProperty("dimension", player.level().dimension().identifier().toString());
         status.addProperty("health", player.getHealth());
         status.addProperty("food", player.getFoodData().getFoodLevel());
+        boolean dead = Mc.dead(player);
+        status.addProperty("dead", dead);
+        Component cause = dead ? Mc.causeOfDeath() : null;
+        if (cause != null) {
+            status.addProperty("causeOfDeath", cause.getString());
+        }
 
         JsonObject position = new JsonObject();
         position.addProperty("x", player.getX());

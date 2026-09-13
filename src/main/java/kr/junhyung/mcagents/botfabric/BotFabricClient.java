@@ -48,6 +48,7 @@ import kr.junhyung.mcagents.botfabric.tools.GetPositionTool;
 import kr.junhyung.mcagents.botfabric.tools.JumpTool;
 import kr.junhyung.mcagents.botfabric.tools.LookAtTool;
 import kr.junhyung.mcagents.botfabric.tools.GetWorldStateTool;
+import kr.junhyung.mcagents.botfabric.tools.ReadAdvancementsTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadBookTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadBossBarsTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadPlayerListTool;
@@ -58,6 +59,7 @@ import kr.junhyung.mcagents.botfabric.tools.PlaceBlockTool;
 import kr.junhyung.mcagents.botfabric.tools.ClickChatTool;
 import kr.junhyung.mcagents.botfabric.tools.PressDialogButtonTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadWindowTool;
+import kr.junhyung.mcagents.botfabric.tools.RespawnTool;
 import kr.junhyung.mcagents.botfabric.tools.RunCommandTool;
 import kr.junhyung.mcagents.botfabric.tools.ScreenshotTool;
 import kr.junhyung.mcagents.botfabric.tools.SendChatTool;
@@ -151,6 +153,8 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new TypeTextTool());
         tools.register(new ReadBookTool());
         tools.register(new RunCommandTool());
+        tools.register(new RespawnTool(scheduler));
+        tools.register(new ReadAdvancementsTool());
 
         Dispatcher dispatcher = new Dispatcher(tools, scheduler, session, config.botName());
 
@@ -199,6 +203,7 @@ public class BotFabricClient implements ClientModInitializer {
                     || Mc.screen() instanceof PauseScreen) {
                 Mc.setScreen(null);
             }
+            session.noticeDeath();
             scheduler.tick();
         });
         ClientPlayConnectionEvents.JOIN.register((handler, sender, minecraft) -> session.report("ready"));

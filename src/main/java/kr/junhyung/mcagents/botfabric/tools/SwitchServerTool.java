@@ -87,7 +87,7 @@ public final class SwitchServerTool implements Tool {
 
         @Override
         public void start(CallContext call) {
-            before = Mc.requirePlayer();
+            before = Mc.requirePlayerEvenIfDead();
 
             ChatWatch.listen(ear);
             Mc.requireConnection().sendCommand("server " + target);

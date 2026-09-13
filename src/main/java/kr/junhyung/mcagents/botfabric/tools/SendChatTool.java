@@ -30,6 +30,6 @@ public final class SendChatTool extends ActionTool {
 
         Mc.requireConnection().sendChat(message);
 
-        return "Sent as " + Mc.requirePlayer().getGameProfile().name() + ": " + message;
+        return "Sent as " + Mc.requirePlayerEvenIfDead().getGameProfile().name() + ": " + message;
     }
 }
