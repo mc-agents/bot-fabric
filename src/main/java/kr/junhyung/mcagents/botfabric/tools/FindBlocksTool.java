@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.Mc;
 import kr.junhyung.mcagents.botfabric.tool.ReadTool;
+import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.Level;
@@ -47,8 +48,14 @@ public final class FindBlocksTool extends ReadTool {
         int radius = (int) Math.ceil(maxDistance);
         int count = args.get("count").getAsInt();
 
-        Block block = BuiltInRegistries.BLOCK.getValue(
-                net.minecraft.resources.Identifier.withDefaultNamespace(wanted));
+        /*
+        getValue answers an unknown name with the registry's default, which is air, so a typo came
+        back as every empty block in range. The name is looked up and refused when it is not there.
+        */
+        Block block = BuiltInRegistries.BLOCK
+                .getOptional(net.minecraft.resources.Identifier.withDefaultNamespace(wanted))
+                .orElseThrow(() -> ToolException.refused("NO_SUCH_BLOCK",
+                        "there is no block called " + args.get("blockType").getAsString()));
 
         Level level = Mc.requirePlayerEvenIfDead().level();
         BlockPos from = Mc.requirePlayerEvenIfDead().blockPosition();
