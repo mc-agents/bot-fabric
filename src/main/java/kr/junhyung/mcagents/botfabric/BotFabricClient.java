@@ -56,6 +56,7 @@ import kr.junhyung.mcagents.botfabric.tools.ReadContainerOptionsTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadBossBarsTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadPlayerListTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadScoreboardTool;
+import kr.junhyung.mcagents.botfabric.tools.ReadStatsTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadTradesTool;
 import kr.junhyung.mcagents.botfabric.tools.SetStanceTool;
 import kr.junhyung.mcagents.botfabric.tools.SmeltItemTool;
@@ -173,6 +174,7 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new RunCommandTool());
         tools.register(new RespawnTool(scheduler));
         tools.register(new ReadAdvancementsTool());
+        tools.register(new ReadStatsTool(scheduler));
 
         Dispatcher dispatcher = new Dispatcher(tools, scheduler, session, config.botName());
 

@@ -8,7 +8,9 @@ import kr.junhyung.mcagents.botfabric.tool.ReadTool;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import net.minecraft.client.gui.screens.DeathScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.WinScreen;
 import net.minecraft.client.gui.screens.dialog.DialogScreen;
+import net.minecraft.client.gui.screens.inventory.AbstractCommandBlockEditScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractSignEditScreen;
 import net.minecraft.client.gui.screens.inventory.BookEditScreen;
@@ -73,6 +75,8 @@ public final class CloseWindowTool extends ReadTool {
             case BookEditScreen ignored -> "book editor";
             case AbstractSignEditScreen ignored -> "sign editor";
             case DialogScreen<?> ignored -> "dialog";
+            case AbstractCommandBlockEditScreen ignored -> "command block editor";
+            case WinScreen ignored -> "end credits";
             case DeathScreen ignored -> "death screen";
             default -> screen.getClass().getSimpleName();
         };
