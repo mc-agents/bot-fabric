@@ -40,6 +40,22 @@ python3 dev/rpc-harness.py dev/smoke.txt --port 8766
 
 No dependencies. It is how you drive the bot without `mcp-server`.
 
+## The image, which is what a change is verified against
+
+```sh
+./hack/image.sh                       # the first version in settings.gradle.kts
+./hack/image.sh 26.2 bot-fabric:try   # a particular version, and a tag
+```
+
+Builds the mod, refreshes `dist/` and builds the image with the loader and API versions that
+version's `gradle.properties` names. `dist/` is refreshed rather than added to: it is gitignored,
+so an old jar sits there until something removes it, and the image takes whatever it finds.
+
+A Gradle `runClient` is a client with a graphics card, a window and this machine's fonts. What
+ships has none of the three, and the difference is not small -- the same client is 287MiB on the
+desktop and 1.7GiB under Xvfb with software rendering, which is how the memory figures in the
+README came to be wrong by four to six times. Run the image.
+
 ## Headless client from the image
 
 The published image is the real thing and needs no Gradle; see the README. `dev/ci-smoke.txt` is
