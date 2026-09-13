@@ -24,6 +24,7 @@ import kr.junhyung.mcagents.botfabric.tools.CloseWindowTool;
 import kr.junhyung.mcagents.botfabric.tools.CompleteCommandTool;
 import kr.junhyung.mcagents.botfabric.tools.CraftItemTool;
 import kr.junhyung.mcagents.botfabric.tools.DigBlockTool;
+import kr.junhyung.mcagents.botfabric.tools.DragSlotsTool;
 import kr.junhyung.mcagents.botfabric.tools.DropHeldItemTool;
 import kr.junhyung.mcagents.botfabric.tools.EquipItemTool;
 import kr.junhyung.mcagents.botfabric.tools.FindBlocksTool;
@@ -131,6 +132,7 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new SelectTradeTool());
         tools.register(new ReadContainerOptionsTool());
         tools.register(new PressContainerButtonTool());
+        tools.register(new DragSlotsTool());
         tools.register(new DropHeldItemTool());
         tools.register(new OpenContainerTool(scheduler));
         tools.register(new WaitForWindowTool(scheduler));
