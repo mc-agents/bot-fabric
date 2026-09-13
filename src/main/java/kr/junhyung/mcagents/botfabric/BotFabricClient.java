@@ -161,6 +161,17 @@ public class BotFabricClient implements ClientModInitializer {
                 minecraft.options.tutorialStep = TutorialSteps.NONE;
                 RenderOptions.apply(minecraft.options, config.renderDistance());
                 minecraft.options.save();
+
+                /*
+                Dialling here rather than at init, because the first tick is the first moment the
+                client can act: everything before it is the resource load, and on a machine
+                without a graphics card that is a minute and a half of building texture atlases in
+                software. A bot that linked during it was asked to join a world it could not join
+                yet -- the server logged it arriving and leaving in the same second -- and a pod
+                that called itself ready was not.
+                */
+                LOGGER.info("dialling {}:{} as {}", config.host(), config.port(), config.botName());
+                client.start(dispatcher);
                 /*
                 A server pushes its resource pack during configuration and, unless the answer is
                 already "always", the client puts up a prompt and waits for somebody to click it.
@@ -185,8 +196,7 @@ public class BotFabricClient implements ClientModInitializer {
         ClientPlayConnectionEvents.JOIN.register((handler, sender, minecraft) -> session.report("ready"));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, minecraft) -> session.report("disconnected"));
 
-        LOGGER.info("dialling {}:{} as {} with {} tools",
-                config.host(), config.port(), config.botName(), tools.all().size());
-        client.start(dispatcher);
+        LOGGER.info("{} tools ready; dialling {}:{} as {} once the client has loaded",
+                tools.all().size(), config.host(), config.port(), config.botName());
     }
 }

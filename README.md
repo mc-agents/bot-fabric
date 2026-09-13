@@ -86,6 +86,13 @@ For comparison, the bot that was archived asked for 192 MiB a pod. One of these 
 them, and that gap was the whole of the case for keeping it -- until it turned out to be a gap
 between a client with a graphics card and a client without one, rather than between two bots.
 
+**A bot dials once the client has loaded, not when the mod starts.** Everything before the first
+client tick is the resource load, and without a graphics card that is a minute and a half of
+building texture atlases in software. A bot that linked during it was asked to join a world it
+could not join yet: the server logged it arriving and leaving in the same second, and `join-server`
+reported that it never spawned. `/readyz` means the same thing now -- a pod that says it is ready
+can be given a world.
+
 The second-long floor under most calls is the frame budget. Rendering cannot be turned off —
 GLFW and GL are set up in the `Minecraft` constructor — so it runs at 1fps while idle, and a
 loop iteration is where queued work runs. A call in flight raises the budget to 60fps and
@@ -252,7 +259,7 @@ matrix comes from `./gradlew printVersions`, so adding a version does not touch 
 | `BOT_NAME` | `fabric_bot` | reported in `hello` |
 | `RECONNECT_MIN_MS` | `2000` | |
 | `BOT_RPC_ENABLED` | `true` | `false` runs a plain client |
-| `HEALTH_PORT` | `8080` | `/healthz`, `/readyz` |
+| `HEALTH_PORT` | `8080` | `/healthz` while the process is up, `/readyz` once it has linked |
 | `BOT_RENDER_DISTANCE` | `8` | chunks. A fresh client picks 16, which a bot has no use for |
 | `BOT_FRAME_RATE_LIMIT` | `1` | frames a second while idle; a call in flight raises it to 60 |
 
