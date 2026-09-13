@@ -3,6 +3,7 @@ package kr.junhyung.mcagents.botfabric.tools;
 import com.google.gson.JsonObject;
 import com.mojang.blaze3d.platform.InputConstants;
 import kr.junhyung.mcagents.botfabric.Mc;
+import kr.junhyung.mcagents.botfabric.mixin.BookEditScreenAccessor;
 import kr.junhyung.mcagents.botfabric.mixin.SignEditScreenAccessor;
 import kr.junhyung.mcagents.botfabric.tool.ActionTool;
 import kr.junhyung.mcagents.botfabric.tool.Args;
@@ -15,6 +16,7 @@ import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractSignEditScreen;
+import net.minecraft.client.gui.screens.inventory.BookEditScreen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 
@@ -43,6 +45,9 @@ public final class TypeTextTool extends ActionTool {
     /** Enough to walk a screen's widgets without following a cycle out of one. */
     private static final int MAX_WIDGETS = 256;
 
+    /** The most pages a book holds, and so how far forward this will turn to reach one. */
+    private static final int MAX_PAGES = 100;
+
     public TypeTextTool() {
         super("type-text");
     }
@@ -61,6 +66,9 @@ public final class TypeTextTool extends ActionTool {
         }
         if (screen instanceof AbstractSignEditScreen sign) {
             return typeIntoSign(sign, text, field, replace);
+        }
+        if (screen instanceof BookEditScreen book) {
+            return typeIntoBook(book, text, field, replace);
         }
         return typeIntoField(screen, text, field, replace);
     }
@@ -96,10 +104,18 @@ public final class TypeTextTool extends ActionTool {
         }
 
         Field field = choose(fields, wanted, where);
+        Written written = write(screen, field, text, replace);
 
+        return "typed into " + field.describe() + " on " + where + ", which now reads \""
+                + written.value() + "\"" + refusedNote(written.refused());
+    }
+
+    /** What the field holds afterwards, and how much of the text it would not take. */
+    private record Written(String value, int refused) {}
+
+    private static Written write(Screen screen, Field field, String text, boolean replace) {
         if (!field.widget().isActive()) {
-            throw ToolException.refused("FIELD_NOT_EDITABLE",
-                    field.describe() + " on " + where + " cannot be typed into");
+            throw ToolException.refused("FIELD_NOT_EDITABLE", field.describe() + " cannot be typed into");
         }
 
         screen.setFocused(field.widget());
@@ -117,8 +133,7 @@ public final class TypeTextTool extends ActionTool {
                     + "\": either it is read-only, or every character in it is one the client will"
                     + " not send.");
         }
-        return "typed into " + field.describe() + " on " + where + ", which now reads \"" + after + "\""
-                + refusedNote(refused);
+        return new Written(after, refused);
     }
 
     private static Field choose(List<Field> fields, String wanted, String where) {
@@ -190,6 +205,60 @@ public final class TypeTextTool extends ActionTool {
             }
             above[0] = null;
         }
+    }
+
+    /**
+     * A book is written a page at a time, so the page has to be turned to before it can be typed
+     * on. Turning forward past the last page adds one, which is how a book grows to the page being
+     * asked for; nothing is closed afterwards, because a book takes several calls and then a name.
+     */
+    private static String typeIntoBook(BookEditScreen book, String text, String wanted, boolean replace) {
+        BookEditScreenAccessor editor = (BookEditScreenAccessor) book;
+        int page = wanted == null ? editor.mcagents$currentPage() : pageOf(wanted);
+
+        turnTo(editor, page);
+
+        List<Field> fields = fieldsOf(book);
+
+        if (fields.isEmpty()) {
+            throw ToolException.refused("NO_TEXT_FIELD", "the book editor has no page to write on");
+        }
+
+        Written written = write(book, fields.getFirst(), text, replace);
+
+        return "wrote page " + (page + 1) + " of " + editor.mcagents$pages().size()
+                + ", which now reads \"" + written.value() + "\"" + refusedNote(written.refused())
+                + " The book is still open: press \"Sign\" to name and finish it, or \"Done\" to keep"
+                + " the draft.";
+    }
+
+    private static void turnTo(BookEditScreenAccessor editor, int page) {
+        for (int step = 0; step <= MAX_PAGES && editor.mcagents$currentPage() != page; step++) {
+            if (editor.mcagents$currentPage() < page) {
+                editor.mcagents$pageForward();
+            } else {
+                editor.mcagents$pageBack();
+            }
+        }
+        if (editor.mcagents$currentPage() != page) {
+            throw ToolException.refused("BOOK_PAGE_STUCK", "the editor stopped on page "
+                    + (editor.mcagents$currentPage() + 1) + " of " + editor.mcagents$pages().size()
+                    + " and would not turn to page " + (page + 1));
+        }
+    }
+
+    private static int pageOf(String wanted) {
+        String digits = wanted.toLowerCase(Locale.ROOT).replace("page", "").trim();
+
+        if (digits.matches("[0-9]{1,3}")) {
+            int number = Integer.parseInt(digits);
+
+            if (number >= 1 && number <= MAX_PAGES) {
+                return number - 1;
+            }
+        }
+        throw ToolException.refused("NO_SUCH_FIELD", "a book's fields are its pages, numbered 1 to "
+                + MAX_PAGES + ", and \"" + wanted + "\" is not one of them");
     }
 
     private static String typeIntoSign(AbstractSignEditScreen sign, String text, String wanted, boolean replace) {

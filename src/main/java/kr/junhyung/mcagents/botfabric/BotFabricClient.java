@@ -48,6 +48,7 @@ import kr.junhyung.mcagents.botfabric.tools.GetPositionTool;
 import kr.junhyung.mcagents.botfabric.tools.JumpTool;
 import kr.junhyung.mcagents.botfabric.tools.LookAtTool;
 import kr.junhyung.mcagents.botfabric.tools.GetWorldStateTool;
+import kr.junhyung.mcagents.botfabric.tools.ReadBookTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadBossBarsTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadPlayerListTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadScoreboardTool;
@@ -148,6 +149,7 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new ClickChatTool(scheduler));
         tools.register(new PressDialogButtonTool(scheduler));
         tools.register(new TypeTextTool());
+        tools.register(new ReadBookTool());
         tools.register(new RunCommandTool());
 
         Dispatcher dispatcher = new Dispatcher(tools, scheduler, session, config.botName());
