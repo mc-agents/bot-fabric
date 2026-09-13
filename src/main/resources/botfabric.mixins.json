@@ -11,7 +11,8 @@
     "FramerateLimitTrackerMixin",
     "KeyboardInputMixin",
     "MinecraftAccessor",
-    "ScreenInvoker"
+    "ScreenInvoker",
+    "SignEditScreenAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

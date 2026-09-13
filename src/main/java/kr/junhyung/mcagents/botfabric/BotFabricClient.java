@@ -61,6 +61,7 @@ import kr.junhyung.mcagents.botfabric.tools.RunCommandTool;
 import kr.junhyung.mcagents.botfabric.tools.ScreenshotTool;
 import kr.junhyung.mcagents.botfabric.tools.SendChatTool;
 import kr.junhyung.mcagents.botfabric.tools.SwitchServerTool;
+import kr.junhyung.mcagents.botfabric.tools.TypeTextTool;
 import kr.junhyung.mcagents.botfabric.tools.UseHeldItemTool;
 import kr.junhyung.mcagents.botfabric.tools.WaitForWindowTool;
 import kr.junhyung.mcagents.botfabric.tools.WaitTicksTool;
@@ -146,6 +147,7 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new ScreenshotTool(scheduler));
         tools.register(new ClickChatTool(scheduler));
         tools.register(new PressDialogButtonTool(scheduler));
+        tools.register(new TypeTextTool());
         tools.register(new RunCommandTool());
 
         Dispatcher dispatcher = new Dispatcher(tools, scheduler, session, config.botName());

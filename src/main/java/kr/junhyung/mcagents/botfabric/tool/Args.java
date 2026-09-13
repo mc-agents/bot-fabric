@@ -18,6 +18,14 @@ public final class Args {
         return element.getAsString();
     }
 
+    public String string(String key, String fallback) {
+        JsonElement element = raw.get(key);
+        if (element == null || element.isJsonNull()) {
+            return fallback;
+        }
+        return string(key);
+    }
+
     public int integer(String key, int fallback) {
         JsonElement element = raw.get(key);
         if (element == null || element.isJsonNull()) {
