@@ -43,8 +43,11 @@ source = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT
 catalog = json.loads(source.read_text())
 
 mine = sorted(
+    # A tool with no wire schema sends a bot nothing of its own: a wait polls another tool, and
+    # that one is what crosses the wire. Reporting it as a capability would offer something this
+    # mod has no handler for.
     (tool for tool in catalog["tools"]
-     if tool["route"] in ROUTES_A_BOT_ANSWERS and KIND in tool["kinds"]),
+     if tool["route"] in ROUTES_A_BOT_ANSWERS and KIND in tool["kinds"] and tool.get("wireSchema")),
     key=lambda tool: tool["name"],
 )
 
