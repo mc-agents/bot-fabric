@@ -15,9 +15,11 @@ jobs:
   check:
     runs-on: ubuntu-latest
     outputs:
-      # Stonecutter owns the version list, so the matrix comes from the build rather than from
-      # anything written here. Adding a Minecraft version stays two files.
-      versions: ${{ steps.versions.outputs.value }}
+      # One Minecraft version, named once in gradle.properties. Everything below reads it from
+      # here rather than writing it again, so moving to a new version stays a change to that file.
+      minecraft: ${{ steps.versions.outputs.minecraft }}
+      loader: ${{ steps.versions.outputs.loader }}
+      api: ${{ steps.versions.outputs.api }}
       modVersion: ${{ steps.versions.outputs.modVersion }}
     steps:
       - uses: actions/checkout@v5
@@ -33,8 +35,11 @@ jobs:
 
       - id: versions
         run: |
-          echo "value=$(./gradlew -q printVersions | tail -1)" >> "$GITHUB_OUTPUT"
-          echo "modVersion=$(sed -n 's/^mod_version=//p' gradle.properties | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+          property() { sed -n "s/^$1=//p" gradle.properties | tr -d '[:space:]'; }
+          echo "minecraft=$(property minecraft_version)" >> "$GITHUB_OUTPUT"
+          echo "loader=$(property loader_version)" >> "$GITHUB_OUTPUT"
+          echo "api=$(property fabric_api_version)" >> "$GITHUB_OUTPUT"
+          echo "modVersion=$(property mod_version)" >> "$GITHUB_OUTPUT"
 
       # On a pull request the base branch is the comparison; on a push it is the commit that was
       # replaced. A force push leaves nothing to compare against - the commit it names is gone -
@@ -59,30 +64,27 @@ jobs:
       - name: the catalogue hashes are readable
         run: python3 -c "import re,pathlib; t=pathlib.Path('src/main/java/kr/junhyung/mcagents/botfabric/tool/CatalogHashes.java').read_text(); n=len(re.findall(r'entry\(\"', t)); print(n, 'tools'); raise SystemExit(0 if n > 0 else 1)"
 
-      - run: ./gradlew buildAll
+      - run: ./gradlew build
 
-      # By version, not by glob. build/libs keeps every jar it has ever produced, so on a tree
-      # that has been built before, *.jar is four copies of one mod and Fabric refuses to load a
+      # By name, not by glob. build/libs keeps every jar it has ever produced, so on a tree that
+      # has been built before, *.jar is several copies of one mod and Fabric refuses to load a
       # duplicate mod id. A CI runner starts clean and would never have shown it.
-      - name: collect the mod jars
+      - name: collect the mod jar
         env:
           MOD_VERSION: ${{ steps.versions.outputs.modVersion }}
+          MINECRAFT: ${{ steps.versions.outputs.minecraft }}
         run: |
           set -eu
-          rm -rf dist-all
-          for properties in versions/*/gradle.properties; do
-            project=$(basename "$(dirname "$properties")")
-            jar="versions/$project/build/libs/botfabric-${MOD_VERSION}+${project}.jar"
-            test -f "$jar" || { echo "no $jar; did the build produce a different name?" >&2; exit 1; }
-            mkdir -p "dist-all/$project"
-            cp "$jar" "dist-all/$project/"
-          done
-          find dist-all -type f -name '*.jar' -print
+          rm -rf dist
+          jar="build/libs/botfabric-${MOD_VERSION}+${MINECRAFT}.jar"
+          test -f "$jar" || { echo "no $jar; did the build produce a different name?" >&2; exit 1; }
+          mkdir -p dist
+          cp "$jar" dist/
 
       - uses: actions/upload-artifact@v4
         with:
-          name: mod-jars
-          path: dist-all/
+          name: mod-jar
+          path: dist/
           if-no-files-found: error
 
   # The end to end check, and the reason a version bump is survivable: it joins a real Paper
@@ -91,41 +93,28 @@ jobs:
     needs: check
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.check.outputs.versions) }}
     steps:
       - uses: actions/checkout@v5
 
       - uses: actions/download-artifact@v4
         with:
-          name: mod-jars
-          path: dist-all
-
-      - id: properties
-        run: |
-          set -eu
-          properties=versions/${{ matrix.project }}/gradle.properties
-          echo "loader=$(sed -n 's/^loader_version=//p' "$properties" | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
-          echo "api=$(sed -n 's/^fabric_api_version=//p' "$properties" | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+          name: mod-jar
+          path: dist
 
       - name: build the bot image
         run: |
           set -eu
-          mkdir -p dist
-          cp "dist-all/${{ matrix.project }}/"*.jar dist/
           docker build \
-            --build-arg MINECRAFT_VERSION=${{ matrix.minecraft }} \
-            --build-arg LOADER_VERSION=${{ steps.properties.outputs.loader }} \
-            --build-arg FABRIC_API_VERSION=${{ steps.properties.outputs.api }} \
+            --build-arg MINECRAFT_VERSION=${{ needs.check.outputs.minecraft }} \
+            --build-arg LOADER_VERSION=${{ needs.check.outputs.loader }} \
+            --build-arg FABRIC_API_VERSION=${{ needs.check.outputs.api }} \
             -t bot-fabric:ci .
 
       # The dialog registry is only read when the world loads, so the datapack goes in after the
       # first boot and the server restarts.
       - name: start Paper
         env:
-          MC_VERSION: ${{ matrix.minecraft }}
+          MC_VERSION: ${{ needs.check.outputs.minecraft }}
         run: |
           set -eu
           wait_healthy() {
@@ -164,7 +153,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: screenshots-mc${{ matrix.minecraft }}
+          name: screenshots-mc${{ needs.check.outputs.minecraft }}
           path: dev/out/
           if-no-files-found: warn
 
@@ -172,10 +161,6 @@ jobs:
     needs: [check, smoke]
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.check.outputs.versions) }}
     permissions:
       contents: read
       # Harbor takes a robot account, so the credentials are repository secrets. cosign
@@ -187,22 +172,15 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: mod-jars
-          path: dist-all
-
-      - name: stage the jar for this Minecraft version
-        run: |
-          set -eu
-          mkdir -p dist
-          cp "dist-all/${{ matrix.project }}/"*.jar dist/
-          ls -l dist
+          name: mod-jar
+          path: dist
 
       # The operator composes a fabric bot's image as <tag>-mc<minecraftVersion>, so every tag
       # published here has to carry the suffix: see operator internal/botimage/resolver.go.
       - id: tag
         env:
           VERSION: ${{ needs.check.outputs.modVersion }}
-          MINECRAFT: ${{ matrix.minecraft }}
+          MINECRAFT: ${{ needs.check.outputs.minecraft }}
         run: |
           set -eu
           stamp=$(date -u +%Y%m%d%H%M%S)
@@ -211,13 +189,6 @@ jobs:
           echo "release=${VERSION}-mc${MINECRAFT}" >> "$GITHUB_OUTPUT"
           echo "immutable=${VERSION}${sep}${stamp}.g${sha}-mc${MINECRAFT}" >> "$GITHUB_OUTPUT"
           echo "moving=latest-mc${MINECRAFT}" >> "$GITHUB_OUTPUT"
-
-      - id: properties
-        run: |
-          set -eu
-          properties=versions/${{ matrix.project }}/gradle.properties
-          echo "loader=$(sed -n 's/^loader_version=//p' "$properties" | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
-          echo "api=$(sed -n 's/^fabric_api_version=//p' "$properties" | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
 
       # Both images are a JRE plus packages plus jars -- nothing in them is compiled here -- so
       # the only thing emulation has to run is apt-get.
@@ -243,15 +214,15 @@ jobs:
           provenance: mode=max
           sbom: true
           build-args: |
-            MINECRAFT_VERSION=${{ matrix.minecraft }}
-            LOADER_VERSION=${{ steps.properties.outputs.loader }}
-            FABRIC_API_VERSION=${{ steps.properties.outputs.api }}
+            MINECRAFT_VERSION=${{ needs.check.outputs.minecraft }}
+            LOADER_VERSION=${{ needs.check.outputs.loader }}
+            FABRIC_API_VERSION=${{ needs.check.outputs.api }}
           tags: |
             ${{ env.IMAGE }}:${{ steps.tag.outputs.release }}
             ${{ env.IMAGE }}:${{ steps.tag.outputs.immutable }}
             ${{ env.IMAGE }}:${{ steps.tag.outputs.moving }}
-          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache-mc${{ matrix.minecraft }}
-          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache-mc${{ matrix.minecraft }},mode=max,image-manifest=true,oci-mediatypes=true
+          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache-mc${{ needs.check.outputs.minecraft }}
+          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache-mc${{ needs.check.outputs.minecraft }},mode=max,image-manifest=true,oci-mediatypes=true
 
       - name: sign image
         run: cosign sign --yes "${{ env.IMAGE }}@${{ steps.build.outputs.digest }}"
@@ -270,8 +241,8 @@ jobs:
           provenance: mode=max
           sbom: true
           build-args: |
-            MINECRAFT_VERSION=${{ matrix.minecraft }}
-            LOADER_VERSION=${{ steps.properties.outputs.loader }}
+            MINECRAFT_VERSION=${{ needs.check.outputs.minecraft }}
+            LOADER_VERSION=${{ needs.check.outputs.loader }}
           tags: |
             ${{ env.ASSETS_IMAGE }}:${{ steps.tag.outputs.release }}
             ${{ env.ASSETS_IMAGE }}:${{ steps.tag.outputs.immutable }}
@@ -282,7 +253,7 @@ jobs:
 
       - run: |
           {
-            echo "published \`${{ env.IMAGE }}:${{ steps.tag.outputs.release }}\` and \`${{ env.ASSETS_IMAGE }}:${{ steps.tag.outputs.release }}\` for Minecraft ${{ matrix.minecraft }}"
+            echo "published \`${{ env.IMAGE }}:${{ steps.tag.outputs.release }}\` and \`${{ env.ASSETS_IMAGE }}:${{ steps.tag.outputs.release }}\` for Minecraft ${{ needs.check.outputs.minecraft }}"
             echo ""
             echo "verify:"
             echo '```'

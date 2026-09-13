@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Consistency: mod_version must be set, and every Stonecutter version must have a
-# versions/<project>/gradle.properties whose fabric_api_version and mc_compat name the Minecraft
-# version it is for. Copying that file for a new version and forgetting to edit it builds against
-# the wrong Fabric API, which compiles and then fails at runtime.
+# Consistency: mod_version must be set, and fabric_api_version and mc_compat must name the one
+# Minecraft version in minecraft_version. Moving to a new version and forgetting one of the three
+# builds against the wrong Fabric API, which compiles and then fails at runtime.
 #
 # Monotonicity: with a base revision given, mod_version must have gone up, because the published
 # image tag is built from it -- but only when something that ends up in the image changed. A README
@@ -20,27 +19,20 @@ fail() {
 version="$(sed -n 's/^mod_version=//p' "${ROOT}/gradle.properties" | tr -d '[:space:]')"
 [[ -n "${version}" ]] || fail "mod_version is not set in gradle.properties"
 
-versions_json="$("${ROOT}/gradlew" -p "${ROOT}" -q printVersions | tail -1)"
-[[ "${versions_json}" == \[* ]] || fail "printVersions did not produce a version list: ${versions_json}"
+property() { sed -n "s/^$1=//p" "${ROOT}/gradle.properties" | tr -d '[:space:]'; }
 
-while IFS=$'\t' read -r project minecraft; do
-	properties="${ROOT}/versions/${project}/gradle.properties"
-	[[ -f "${properties}" ]] || fail "${project} has no versions/${project}/gradle.properties"
+minecraft="$(property minecraft_version)"
+[[ -n "${minecraft}" ]] || fail "minecraft_version is not set in gradle.properties"
 
-	api="$(sed -n 's/^fabric_api_version=//p' "${properties}" | tr -d '[:space:]')"
-	[[ -n "${api}" ]] || fail "${project}: fabric_api_version is not set"
-	[[ "${api}" == *"+${minecraft}" ]] || fail "${project}: fabric_api_version ${api} is not for ${minecraft}"
+api="$(property fabric_api_version)"
+[[ -n "${api}" ]] || fail "fabric_api_version is not set"
+[[ "${api}" == *"+${minecraft}" ]] || fail "fabric_api_version ${api} is not for ${minecraft}"
 
-	compat="$(sed -n 's/^mc_compat=//p' "${properties}" | tr -d '[:space:]')"
-	[[ -n "${compat}" ]] || fail "${project}: mc_compat is not set"
-	[[ "${compat}" == *"${minecraft}"* ]] || fail "${project}: mc_compat ${compat} does not name ${minecraft}"
+compat="$(property mc_compat)"
+[[ -n "${compat}" ]] || fail "mc_compat is not set"
+[[ "${compat}" == *"${minecraft}"* ]] || fail "mc_compat ${compat} does not name ${minecraft}"
 
-	echo "${project}: fabric api ${api}, accepts ${compat}"
-done < <(python3 -c '
-import json, sys
-for entry in json.loads(sys.argv[1]):
-    print(entry["project"], entry["minecraft"], sep="\t")
-' "${versions_json}")
+echo "minecraft ${minecraft}: fabric api ${api}, accepts ${compat}"
 
 base="${1:-}"
 if [[ -z "${base}" ]]; then
@@ -49,7 +41,7 @@ if [[ -z "${base}" ]]; then
 fi
 
 # What the image is built from. Docs, the dev harness and CI's own files are not in it.
-RELEASE_PATHS=(src/ versions/ docker/ gradle.properties build.gradle.kts settings.gradle.kts Dockerfile)
+RELEASE_PATHS=(src/ docker/ gradle.properties build.gradle.kts settings.gradle.kts Dockerfile)
 
 changed="$(git -C "${ROOT}" diff --name-only "${base}" HEAD || true)"
 shipped="$(printf '%s\n' "${changed}" | grep -E "^($(IFS='|'; echo "${RELEASE_PATHS[*]}"))" || true)"

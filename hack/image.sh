@@ -2,9 +2,8 @@
 #
 # Build the bot image from the working tree, the way CI builds it.
 #
-#     ./hack/image.sh                 # the first Minecraft version in settings.gradle.kts
-#     ./hack/image.sh 26.2            # a particular one
-#     ./hack/image.sh 26.1.2 my:tag   # and a tag of your own
+#     ./hack/image.sh              # tagged bot-fabric:local-mc<minecraft_version>
+#     ./hack/image.sh my:tag       # or a tag of your own
 #
 # Testing against `runClient` tests a client with a graphics card, a window and this machine's
 # fonts. What ships is a container with none of those, and the difference is not small: the same
@@ -18,29 +17,25 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-version=${1:-$(sed -n 's/.*versions("\([^"]*\)".*/\1/p' settings.gradle.kts | head -1)}
-tag=${2:-bot-fabric:local-mc${version}}
+value() { sed -n "s/^$1=//p" gradle.properties | tr -d '[:space:]'; }
 
-properties="versions/${version}/gradle.properties"
-[ -f "$properties" ] || { echo "no such version: $version" >&2; exit 1; }
-
-value() { sed -n "s/^$1=//p" "$properties" | tr -d '[:space:]'; }
-
-mod_version=$(sed -n 's/^mod_version=//p' gradle.properties | tr -d '[:space:]')
+mod_version=$(value mod_version)
+minecraft=$(value minecraft_version)
 loader=$(value loader_version)
 fabric_api=$(value fabric_api_version)
+tag=${1:-bot-fabric:local-mc${minecraft}}
 
-echo "building ${tag}: mod ${mod_version}, minecraft ${version}, loader ${loader}, api ${fabric_api}"
+echo "building ${tag}: mod ${mod_version}, minecraft ${minecraft}, loader ${loader}, api ${fabric_api}"
 
-./gradlew -q "${version}:build"
+./gradlew -q build
 
 rm -rf dist
 mkdir -p dist
-cp "versions/${version}/build/libs/botfabric-${mod_version}+${version}.jar" dist/
+cp "build/libs/botfabric-${mod_version}+${minecraft}.jar" dist/
 
 docker build \
     --platform "linux/$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')" \
-    --build-arg "MINECRAFT_VERSION=${version}" \
+    --build-arg "MINECRAFT_VERSION=${minecraft}" \
     --build-arg "LOADER_VERSION=${loader}" \
     --build-arg "FABRIC_API_VERSION=${fabric_api}" \
     -t "${tag}" .

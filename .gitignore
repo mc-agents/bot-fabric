@@ -1,9 +1,6 @@
 .gradle/
 build/
 run/
-versions/*/build/
-versions/*/src/
-versions/*/run/
 .idea/
 *.iml
 dev/out/

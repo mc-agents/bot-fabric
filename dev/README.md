@@ -43,12 +43,12 @@ No dependencies. It is how you drive the bot without `mcp-server`.
 ## The image, which is what a change is verified against
 
 ```sh
-./hack/image.sh                       # the first version in settings.gradle.kts
-./hack/image.sh 26.2 bot-fabric:try   # a particular version, and a tag
+./hack/image.sh                   # tagged bot-fabric:local-mc26.1.2
+./hack/image.sh bot-fabric:try    # or a tag of your own
 ```
 
 Builds the mod, refreshes `dist/` and builds the image with the loader and API versions that
-version's `gradle.properties` names. `dist/` is refreshed rather than added to: it is gitignored,
+`gradle.properties` names. `dist/` is refreshed rather than added to: it is gitignored,
 so an old jar sits there until something removes it, and the image takes whatever it finds.
 
 A Gradle `runClient` is a client with a graphics card, a window and this machine's fonts. What

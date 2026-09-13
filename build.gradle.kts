@@ -4,12 +4,12 @@ plugins {
 
 val javaVersion = JavaVersion.toVersion(property("java_version") as String)
 
-version = "${property("mod_version")}+${stonecutter.current.version}"
+version = "${property("mod_version")}+${property("minecraft_version")}"
 group = property("mod_group") as String
 base.archivesName = property("mod_id") as String
 
 dependencies {
-    minecraft("com.mojang:minecraft:${stonecutter.current.version}")
+    minecraft("com.mojang:minecraft:${property("minecraft_version")}")
     implementation("net.fabricmc:fabric-loader:${property("loader_version")}")
     implementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_api_version")}")
 

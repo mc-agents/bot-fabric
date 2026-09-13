@@ -185,19 +185,16 @@ A screenshot reports its own dimensions rather than making the server parse a PN
 
 ## Building and running
 
-Java 25. Everything goes through Stonecutter, so tasks are per-version.
+Java 25. One Minecraft version, 26.1.2.
 
 ```sh
-./gradlew build       # the active version, currently 26.1.2
-./gradlew buildAll    # every version
+./gradlew build
 ```
 
-### Adding a Minecraft version
-
-Two files. `settings.gradle.kts` gains the version in `stonecutter.create`, and
-`versions/<version>/gradle.properties` gains four lines:
+The version lives in five lines of `gradle.properties`, and nothing else names it:
 
 ```properties
+minecraft_version=26.1.2
 loader_version=0.19.5
 fabric_api_version=0.155.3+26.1.2
 java_version=25
@@ -237,7 +234,7 @@ script format.
 
 ```sh
 ./gradlew build
-mkdir -p dist && cp versions/26.1.2/build/libs/*.jar dist/
+mkdir -p dist && cp build/libs/botfabric-*+26.1.2.jar dist/
 docker build --platform linux/amd64 \
     --build-arg MINECRAFT_VERSION=26.1.2 \
     --build-arg LOADER_VERSION=0.19.5 \
@@ -281,18 +278,17 @@ set them: `./gradlew runClient -Prpc.port=8766`.
 
 ## Following a Minecraft version
 
-26.1.2 and 26.2, and adding the second one is what the Stonecutter setup is for. It cost two files
--- `versions/26.2/gradle.properties` and one line in `settings.gradle.kts` -- and then fifteen
-compile errors, because 26.2 moved four things: the screen from a field on `Minecraft` to `Gui`, the
-boss bar overlay one level deeper into `Hud`, the render target to `GameRenderer`, and hiding the
-HUD from an option to a method on `Hud`.
+One version at a time. The mod was built for 26.1.2 and 26.2 side by side through Stonecutter, and
+that was undone: a second version doubled every build, every image and every end-to-end run, and
+azalea -- the other kind of bot -- supports exactly one version per release anyway. Moving to a new
+version is a release of its own: change the five lines above, fix what no longer compiles, and run
+the end-to-end suite against it.
 
-Those fifteen are now five methods on `Mc`, each with the version split inside it, so the next move
-is one edit rather than fifteen. CI takes its matrix from Stonecutter, so a version added to
-`settings.gradle.kts` is built, smoke-tested and published without touching the workflow.
-
-Every mixin applied unchanged on 26.2, which is the number that decides what following a version
-costs. The client walked, read its action bar, crafted, and took a screenshot on both.
+What moving costs was measured once, on 26.2. It moved four things -- the screen from a field on
+`Minecraft` to `Gui`, the boss bar overlay one level deeper into `Hud`, the render target to
+`GameRenderer`, and hiding the HUD from an option to a method on `Hud` -- which was fifteen compile
+errors. Those are the methods on `Mc` now, so the same move is one edit each. Every mixin applied
+unchanged on 26.2, which is the number that decides what following a version costs.
 
 ## Known limits
 
