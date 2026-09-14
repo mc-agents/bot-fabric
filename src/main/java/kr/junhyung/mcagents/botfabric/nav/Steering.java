@@ -19,6 +19,12 @@ public final class Steering {
     private static volatile Input pressed;
     private static volatile boolean sneaking;
     private static volatile boolean sprinting;
+    private static volatile boolean jumpTapped;
+    private static volatile boolean sneakTapped;
+    private static volatile boolean sprintTapped;
+
+    /** The movement keys press-input holds for a few ticks, one press at a time. */
+    public enum Tap { JUMP, SNEAK, SPRINT }
 
     private Steering() {
     }
@@ -48,16 +54,31 @@ public final class Steering {
         sprinting = held;
     }
 
+    /**
+     * A press of its own, kept apart from the stance: letting go of a tapped sneak must not stand up
+     * a bot that set-stance put in a crouch.
+     */
+    public static void tap(Tap key, boolean down) {
+        switch (key) {
+            case JUMP -> jumpTapped = down;
+            case SNEAK -> sneakTapped = down;
+            case SPRINT -> sprintTapped = down;
+        }
+    }
+
     /** Everything let go, for a connection that ended: a new world starts standing up. */
     public static void reset() {
         pressed = null;
         sneaking = false;
         sprinting = false;
+        jumpTapped = false;
+        sneakTapped = false;
+        sprintTapped = false;
     }
 
-    /** The keys a tick ends with: the movement keys given, or the keyboard's, with the stance held on top. */
+    /** The keys a tick ends with: the movement keys given, or the keyboard's, with the stance and any tap held on top. */
     public static Input over(Input keys) {
-        return new Input(keys.forward(), keys.backward(), keys.left(), keys.right(), keys.jump(),
-                keys.shift() || sneaking, keys.sprint() || sprinting);
+        return new Input(keys.forward(), keys.backward(), keys.left(), keys.right(), keys.jump() || jumpTapped,
+                keys.shift() || sneaking || sneakTapped, keys.sprint() || sprinting || sprintTapped);
     }
 }

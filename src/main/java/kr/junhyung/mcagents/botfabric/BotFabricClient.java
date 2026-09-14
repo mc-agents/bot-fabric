@@ -66,6 +66,7 @@ import kr.junhyung.mcagents.botfabric.tools.PlaceBlockTool;
 import kr.junhyung.mcagents.botfabric.tools.ClickChatTool;
 import kr.junhyung.mcagents.botfabric.tools.PressContainerButtonTool;
 import kr.junhyung.mcagents.botfabric.tools.PressDialogButtonTool;
+import kr.junhyung.mcagents.botfabric.tools.PressInputTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadWindowTool;
 import kr.junhyung.mcagents.botfabric.tools.RespawnTool;
 import kr.junhyung.mcagents.botfabric.tools.RunCommandTool;
@@ -153,6 +154,7 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new InteractEntityTool(scheduler));
         tools.register(new AttackEntityTool(scheduler));
         tools.register(new UseHeldItemTool(scheduler));
+        tools.register(new PressInputTool(scheduler));
         tools.register(new MoveToPositionTool(scheduler));
         tools.register(new MoveInDirectionTool(scheduler));
         tools.register(new FlyToTool(scheduler));

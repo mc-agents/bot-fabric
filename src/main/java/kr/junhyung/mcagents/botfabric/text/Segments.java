@@ -89,6 +89,15 @@ public final class Segments {
     }
 
     /**
+     * The text as it reads with the glyphs taken out and nothing between the pieces: what a pattern
+     * written against a feed line is matched with inside the bot, where the font labels mcp-server
+     * puts in front of each piece do not exist.
+     */
+    public static String readable(Component component) {
+        return GLYPHS.matcher(component.getString()).replaceAll("");
+    }
+
+    /**
      * The component as Minecraft's own JSON, so mcp-server can do the flattening itself.
      *
      * <p>The game serialises it: no library sits between the client and the wire, which is what

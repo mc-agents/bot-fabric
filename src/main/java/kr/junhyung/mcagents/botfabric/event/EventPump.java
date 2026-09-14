@@ -143,6 +143,11 @@ public final class EventPump {
             ChatLines.heard(message);
         }
 
+        /* A press waiting on a line reacts here, before the tick that reads the keys, not a round trip later. */
+        if (kind.equals("actionBar") || kind.equals("title") || kind.equals("effect")) {
+            FeedWatch.saw(kind, kind.equals("effect") ? message.getString() : Segments.readable(message));
+        }
+
         JsonObject event = new JsonObject();
         event.addProperty("t", "event");
         event.addProperty("kind", kind);
