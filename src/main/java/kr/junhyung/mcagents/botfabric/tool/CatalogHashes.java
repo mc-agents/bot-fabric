@@ -74,6 +74,7 @@ public final class CatalogHashes {
             entry("select-trade", "sha256:dca18d169df2b97eead79c37bf85bd55ac217323864fc9fcc3d2563cd3ed2bc0"),
             entry("send-chat", "sha256:5c7dd5f9ce17e6ef4722a41c75a474b6dddbbccab91d61afb2ada4ef8ff46829"),
             entry("set-beacon-effects", "sha256:892553669d702345a2ff4dd97777ffed2a54c3b4324a5f5b68f092d2b58f32f4"),
+            entry("set-dialog-input", "sha256:99dfa037bd9ee6cc20372402392b537a1343201aad09bcc14c79347362fc61a4"),
             entry("set-stance", "sha256:f2f7d5bf9fae762bd098393230fd01c27e1a6f1ef5b03851883addb71161ed20"),
             entry("smelt-item", "sha256:ee0fe9d676a496f246a7677f80dc3969187e96e741d3b20c67b24a651b55cfa5"),
             entry("switch-server", "sha256:00d3e77dd497e1df245c1cdcdd76472db66e5cb0e54f8989559990cbdf3340b5"),

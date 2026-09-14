@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_${java}",
   "client": [
     "AbstractContainerScreenInvoker",
+    "AbstractSliderButtonAccessor",
     "AdvancementToastAccessor",
     "BlockDisplayInvoker",
     "BookEditScreenAccessor",
@@ -18,6 +19,7 @@
     "CooldownInstanceAccessor",
     "CreativeModeInventoryScreenInvoker",
     "DeathScreenAccessor",
+    "DialogScreenAccessor",
     "FishingHookAccessor",
     "FramerateLimitTrackerMixin",
     "ItemCooldownsAccessor",

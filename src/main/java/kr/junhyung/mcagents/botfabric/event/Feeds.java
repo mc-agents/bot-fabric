@@ -1,5 +1,6 @@
 package kr.junhyung.mcagents.botfabric.event;
 
+import com.google.gson.JsonObject;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.dialog.Dialog;
@@ -43,6 +44,14 @@ public final class Feeds {
         EventPump listener = pump;
         if (listener != null) {
             listener.dialog(shown);
+        }
+    }
+
+    /** The dialog that is open again, with what its inputs hold once one was set. */
+    public static void dialogValues(Dialog shown, JsonObject values) {
+        EventPump listener = pump;
+        if (listener != null) {
+            listener.dialog(shown, values);
         }
     }
 

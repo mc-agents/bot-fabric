@@ -55,6 +55,18 @@ public final class EventPump {
     }
 
     /**
+     * The same, with {@code values}: what each input holds, which the definition does not say once a
+     * player -- or set-dialog-input -- has changed one.
+     */
+    public void dialog(Dialog shown, JsonObject values) {
+        JsonElement raw = Dialogs.raw(shown);
+        if (raw.isJsonObject()) {
+            raw.getAsJsonObject().add("values", values);
+        }
+        emit("dialog", "dialog", shown.common().title(), raw);
+    }
+
+    /**
      * An advancement's toast, with the id beside the title.
      *
      * <p>The title is what the toast draws and the id is what a caller can name: a server that

@@ -75,6 +75,7 @@ import kr.junhyung.mcagents.botfabric.tools.SelectBundleItemTool;
 import kr.junhyung.mcagents.botfabric.tools.SelectTradeTool;
 import kr.junhyung.mcagents.botfabric.tools.SetBeaconEffectsTool;
 import kr.junhyung.mcagents.botfabric.tools.SendChatTool;
+import kr.junhyung.mcagents.botfabric.tools.SetDialogInputTool;
 import kr.junhyung.mcagents.botfabric.tools.SwitchServerTool;
 import kr.junhyung.mcagents.botfabric.tools.TypeTextTool;
 import kr.junhyung.mcagents.botfabric.tools.UseHeldItemTool;
@@ -173,6 +174,7 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new ScreenshotTool(scheduler));
         tools.register(new ClickChatTool(scheduler));
         tools.register(new PressDialogButtonTool(scheduler));
+        tools.register(new SetDialogInputTool());
         tools.register(new TypeTextTool());
         tools.register(new ReadBookTool());
         tools.register(new RunCommandTool());
