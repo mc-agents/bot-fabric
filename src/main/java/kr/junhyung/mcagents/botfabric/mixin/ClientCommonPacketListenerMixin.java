@@ -2,11 +2,14 @@ package kr.junhyung.mcagents.botfabric.mixin;
 
 import kr.junhyung.mcagents.botfabric.event.Feeds;
 import kr.junhyung.mcagents.botfabric.event.ResourcePacks;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.dialog.DialogConnectionAccess;
 import net.minecraft.client.multiplayer.ClientCommonPacketListenerImpl;
+import net.minecraft.core.Holder;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundClearDialogPacket;
-import net.minecraft.network.protocol.common.ClientboundShowDialogPacket;
 import net.minecraft.network.protocol.common.ServerboundResourcePackPacket;
+import net.minecraft.server.dialog.Dialog;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -22,17 +25,21 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * <p>On the way out of {@code send}, which every packet passes through. One {@code instanceof} per
  * packet is nothing next to writing one.
  *
- * <p>The two dialog packets are here as well, because they are common packets and this is the
- * listener that handles them. Read from the packet rather than from the screen: the dialog feed is
- * about what the server sent, and a reader that waited for a screen would be asking whether the
- * client happened to have drawn it yet.
+ * <p>The dialogs are here as well, because this is the listener that shows them. A dialog is fed
+ * when the client is asked to show it, whoever asked, rather than when a screen for it is drawn: a
+ * reader that waited for a screen would be asking whether the client happened to have drawn it yet.
+ * It used to be fed from the server's packet alone, and a dialog a chat line's click opened was on
+ * screen with nothing in the feed to say so -- an agent reads whatever dialog is up, whoever opened it.
  */
 @Mixin(ClientCommonPacketListenerImpl.class)
 public class ClientCommonPacketListenerMixin {
 
-    @Inject(method = "handleShowDialog", at = @At("TAIL"))
-    private void botfabric$showDialog(ClientboundShowDialogPacket packet, CallbackInfo info) {
-        Feeds.dialog(packet.dialog().value());
+    /** The one path the server's packet and a click event both take to put a dialog on screen. */
+    @Inject(method = "showDialog(Lnet/minecraft/core/Holder;Lnet/minecraft/client/gui/screens/dialog/DialogConnectionAccess;Lnet/minecraft/client/gui/screens/Screen;)V",
+            at = @At("HEAD"))
+    private void botfabric$showDialog(Holder<Dialog> dialog, DialogConnectionAccess access, Screen activeScreen,
+            CallbackInfo info) {
+        Feeds.dialog(dialog.value());
     }
 
     @Inject(method = "handleClearDialog", at = @At("TAIL"))
