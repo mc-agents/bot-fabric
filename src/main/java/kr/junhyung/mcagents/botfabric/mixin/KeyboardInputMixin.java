@@ -21,6 +21,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * <p>{@code moveVector} is rebuilt here rather than left alone, because it is what the movement
  * code actually reads: replacing only the key presses moves nothing.
  *
+ * <p>Sneak and sprint are laid over whatever the keys are, held or not. The key presses are what
+ * the client tells the server and what {@code isShiftKeyDown} reads, so a crouch set anywhere else
+ * -- the entity's shared flag -- is undone here on the next tick and never reaches the server.
+ *
  * <p>Extending {@link ClientInput} is how the two fields are reached. They are declared there and
  * not on the target, and {@code @Shadow} only looks at the target class -- which the client says at
  * the moment it applies the mixin, by refusing to load and dropping the connection.
@@ -32,13 +36,11 @@ public abstract class KeyboardInputMixin extends ClientInput {
     private void botfabric$steer(CallbackInfo info) {
         Input wanted = Steering.pressed();
 
-        if (wanted == null) {
-            return;
+        if (wanted != null) {
+            this.moveVector = new Vec2(impulse(wanted.left(), wanted.right()),
+                    impulse(wanted.backward(), wanted.forward())).normalized();
         }
-
-        this.keyPresses = wanted;
-        this.moveVector = new Vec2(impulse(wanted.left(), wanted.right()),
-                impulse(wanted.backward(), wanted.forward())).normalized();
+        this.keyPresses = Steering.over(wanted == null ? this.keyPresses : wanted);
     }
 
     private static float impulse(boolean negative, boolean positive) {

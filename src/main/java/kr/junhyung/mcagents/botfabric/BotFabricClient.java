@@ -9,6 +9,7 @@ import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.tutorial.TutorialSteps;
 import net.minecraft.client.gui.screens.PauseScreen;
 import kr.junhyung.mcagents.botfabric.event.EventPump;
+import kr.junhyung.mcagents.botfabric.nav.Steering;
 import kr.junhyung.mcagents.botfabric.rpc.Dispatcher;
 import kr.junhyung.mcagents.botfabric.render.FrameBudget;
 import kr.junhyung.mcagents.botfabric.render.RenderOptions;
@@ -76,6 +77,7 @@ import kr.junhyung.mcagents.botfabric.tools.SendChatTool;
 import kr.junhyung.mcagents.botfabric.tools.SwitchServerTool;
 import kr.junhyung.mcagents.botfabric.tools.TypeTextTool;
 import kr.junhyung.mcagents.botfabric.tools.UseHeldItemTool;
+import kr.junhyung.mcagents.botfabric.tools.UseKey;
 import kr.junhyung.mcagents.botfabric.tools.WaitForWindowTool;
 import kr.junhyung.mcagents.botfabric.tools.WaitTicksTool;
 import org.slf4j.Logger;
@@ -225,9 +227,14 @@ public class BotFabricClient implements ClientModInitializer {
             }
             session.noticeDeath();
             scheduler.tick();
+            UseKey.tick();
         });
         ClientPlayConnectionEvents.JOIN.register((handler, sender, minecraft) -> session.report("ready"));
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, minecraft) -> session.report("disconnected"));
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, minecraft) -> {
+            /* A crouch or a held key from the last world would otherwise be the first thing done in the next. */
+            Steering.reset();
+            session.report("disconnected");
+        });
 
         LOGGER.info("{} tools ready; dialling {}:{} as {} once the client has loaded",
                 tools.all().size(), config.host(), config.port(), config.botName());

@@ -18,8 +18,8 @@ import net.minecraft.world.item.ItemStack;
  * Right-click with what the bot is holding, keeping the button down when asked.
  *
  * <p>A bow is the reason for the holding: the item has to stay in use for the draw to build up, and
- * a single use-and-release fires nothing. The client keeps using it while the button is down, so the
- * task uses it once and then releases after the time asked for.
+ * a single use-and-release fires nothing. The client keeps using it only while the button is down,
+ * so the task holds the button, uses the item once and lets go after the time asked for.
  */
 public final class UseHeldItemTool implements Tool {
 
@@ -84,6 +84,11 @@ public final class UseHeldItemTool implements Tool {
             held = describe(player.getItemInHand(hand));
             remainingTicks = (int) Math.ceil(holdMs / (double) TICK_MS);
 
+            if (holdMs == 0) {
+                UseKey.holdUntilUsed();
+            } else {
+                UseKey.hold();
+            }
             Mc.client().gameMode.useItem(player, hand);
 
             if (holdMs == 0) {
@@ -97,7 +102,7 @@ public final class UseHeldItemTool implements Tool {
                 return false;
             }
 
-            Mc.requirePlayer().releaseUsingItem();
+            release(Mc.requirePlayer());
             call.ok("Used " + held + " in the " + where() + ", held for " + holdMs + "ms and released.");
 
             return true;
@@ -105,15 +110,25 @@ public final class UseHeldItemTool implements Tool {
 
         /**
          * A cancelled or expired hold must not leave the button down: the client would keep the item
-         * in use for as long as the bot is in the world. Only a hold this task started is released,
-         * because a plain use leaves the item in use on purpose -- that is how food is eaten.
+         * in use for as long as the bot is in the world. Only a hold this task started is released
+         * here, because a plain use leaves the item in use on purpose -- that is how food is eaten --
+         * and {@link UseKey} lets go of that one when the eating is done.
          */
         @Override
         public void cleanup(CallContext call) {
-            LocalPlayer player = Mc.client().player;
+            if (holdMs > 0) {
+                release(Mc.client().player);
+            }
+        }
 
-            if (holdMs > 0 && player != null && player.isUsingItem()) {
-                player.releaseUsingItem();
+        /**
+         * Through the game mode, which tells the server. The player's own release only stops the
+         * client's copy of the use, and the server went on drawing a bow nobody would ever let go.
+         */
+        private static void release(LocalPlayer player) {
+            UseKey.release();
+            if (player != null && player.isUsingItem()) {
+                Mc.client().gameMode.releaseUsingItem(player);
             }
         }
 

@@ -17,6 +17,8 @@ import net.minecraft.world.entity.player.Input;
 public final class Steering {
 
     private static volatile Input pressed;
+    private static volatile boolean sneaking;
+    private static volatile boolean sprinting;
 
     private Steering() {
     }
@@ -32,5 +34,30 @@ public final class Steering {
     /** Null when the keyboard -- or the absence of one -- should win. */
     public static Input pressed() {
         return pressed;
+    }
+
+    /**
+     * Sneak and sprint, held apart from the movement keys because they outlast them: a walk that
+     * ends releases its keys, and a crouch asked for before it must not end with it.
+     */
+    public static void sneak(boolean held) {
+        sneaking = held;
+    }
+
+    public static void sprint(boolean held) {
+        sprinting = held;
+    }
+
+    /** Everything let go, for a connection that ended: a new world starts standing up. */
+    public static void reset() {
+        pressed = null;
+        sneaking = false;
+        sprinting = false;
+    }
+
+    /** The keys a tick ends with: the movement keys given, or the keyboard's, with the stance held on top. */
+    public static Input over(Input keys) {
+        return new Input(keys.forward(), keys.backward(), keys.left(), keys.right(), keys.jump(),
+                keys.shift() || sneaking, keys.sprint() || sprinting);
     }
 }
