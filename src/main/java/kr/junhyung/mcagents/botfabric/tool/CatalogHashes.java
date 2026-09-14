@@ -19,7 +19,7 @@ public final class CatalogHashes {
 
     private static final Map<String, String> BY_TOOL = Map.ofEntries(
             entry("activate-block", "sha256:745bc34ffa94b53097b81ff9cabd6d41db733664935cd5c7d7a9a090cc329c65"),
-            entry("attack-entity", "sha256:ad34f9f2602d72747786a2ad0758c1debc3e06367a46ff110d04dd4636edd27a"),
+            entry("attack-entity", "sha256:7ffff72dca24dc8640f46a40863606eda6a1e09e3a98fc615b5c315937589fd2"),
             entry("can-craft", "sha256:ff3fc389c507c53b6579cb9f27e960030ff0819170a6554d70c117b705d10fc6"),
             entry("click-chat", "sha256:129f1a323b4b58b410c8e4ae2857cf7c63294809cead493121856292daaf4a89"),
             entry("click-slot", "sha256:1daccb57f61d8687ddb3b0e5a2206ad465fdecd3d6caf83568032c987e70f54b"),
@@ -42,7 +42,7 @@ public final class CatalogHashes {
             entry("get-target-block", "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"),
             entry("get-world-state", "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"),
             entry("give-item", "sha256:53f2f7218c621e697a8255ddfc89d4ee5bf1bfcc803e70b31e40cb93a5b5840d"),
-            entry("interact-entity", "sha256:34e1bc55c70e5bfb98e332cfb17c3ebecf6c0e115a101c51e7de4662a7342504"),
+            entry("interact-entity", "sha256:95665c75b51a41b365e551b1414d216dd63aaa5e5167fc846b1b0637f853ca19"),
             entry("jump", "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"),
             entry("list-inventory", "sha256:d746974fa9afd5e951f76f9af38954b0ad7f436f2120dc974da65e5ee39f856f"),
             entry("list-recipes", "sha256:3f3167d3a8a4e89e377b172a705c77bd7f02c491abb7a32c289d33f92a7408cb"),

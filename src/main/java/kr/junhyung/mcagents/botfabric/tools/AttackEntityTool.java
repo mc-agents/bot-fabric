@@ -12,6 +12,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.EntityHitResult;
 
 /**
  * Swing at an entity, more than once when asked.
@@ -45,14 +46,11 @@ public final class AttackEntityTool implements Tool {
 
     @Override
     public void invoke(CallContext call, JsonObject args) {
-        Args parsed = new Args(args);
-        scheduler.submit(new AttackTask(parsed.string("name"),
-                args.get("maxDistance").getAsDouble(), parsed.integer("times", 1)), call);
+        scheduler.submit(new AttackTask(Selector.of(args), new Args(args).integer("times", 1)), call);
     }
 
     private static final class AttackTask implements Task {
-        private final String query;
-        private final double maxDistance;
+        private final Selector selector;
         private final int times;
 
         private final Approach approach = new Approach();
@@ -62,9 +60,8 @@ public final class AttackEntityTool implements Tool {
         private int landed;
         private int waiting;
 
-        private AttackTask(String query, double maxDistance, int times) {
-            this.query = query;
-            this.maxDistance = maxDistance;
+        private AttackTask(Selector selector, int times) {
+            this.selector = selector;
             this.times = times;
         }
 
@@ -75,7 +72,7 @@ public final class AttackEntityTool implements Tool {
 
         @Override
         public void start(CallContext call) {
-            target = Entities.require(Mc.requirePlayer(), query, maxDistance);
+            target = selector.resolve(Mc.requirePlayer());
             label = Entities.label(target);
         }
 
@@ -93,12 +90,21 @@ public final class AttackEntityTool implements Tool {
 
             LocalPlayer player = Mc.requirePlayer();
 
-            /* Before each swing, not once: a mob that backs off is followed rather than missed. */
-            if (!approach.reached(player, target)) {
-                return false;
+            if (selector.crosshair()) {
+                /* Not followed: a target picked by where the bot looks is hit only while it is there. */
+                if (!(Mc.client().hitResult instanceof EntityHitResult hit) || hit.getEntity() != target) {
+                    call.ok("Hit " + label + " " + landed + " time(s) out of " + times
+                            + "; it left the crosshair before the rest landed.");
+                    return true;
+                }
+            } else {
+                /* Before each swing, not once: a mob that backs off is followed rather than missed. */
+                if (!approach.reached(player, target)) {
+                    return false;
+                }
+                player.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
             }
 
-            player.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
             Mc.client().gameMode.attack(player, target);
             player.swing(InteractionHand.MAIN_HAND);
             landed++;

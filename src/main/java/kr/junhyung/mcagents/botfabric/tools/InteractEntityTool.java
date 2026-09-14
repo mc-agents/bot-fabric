@@ -5,7 +5,6 @@ import kr.junhyung.mcagents.botfabric.Mc;
 import kr.junhyung.mcagents.botfabric.rpc.CallContext;
 import kr.junhyung.mcagents.botfabric.task.Task;
 import kr.junhyung.mcagents.botfabric.task.TaskScheduler;
-import kr.junhyung.mcagents.botfabric.tool.Args;
 import kr.junhyung.mcagents.botfabric.tool.CatalogHashes;
 import kr.junhyung.mcagents.botfabric.tool.Tool;
 import net.minecraft.client.player.LocalPlayer;
@@ -42,20 +41,18 @@ public final class InteractEntityTool implements Tool {
 
     @Override
     public void invoke(CallContext call, JsonObject args) {
-        scheduler.submit(new InteractTask(new Args(args).string("name"),
-                args.get("maxDistance").getAsDouble()), call);
+        scheduler.submit(new InteractTask(Selector.of(args)), call);
     }
 
     private static final class InteractTask implements Task {
-        private final String query;
-        private final double maxDistance;
+        private final Selector selector;
         private final Approach approach = new Approach();
 
         private Entity target;
+        private EntityHitResult aimed;
 
-        private InteractTask(String query, double maxDistance) {
-            this.query = query;
-            this.maxDistance = maxDistance;
+        private InteractTask(Selector selector) {
+            this.selector = selector;
         }
 
         @Override
@@ -65,21 +62,31 @@ public final class InteractEntityTool implements Tool {
 
         @Override
         public void start(CallContext call) {
-            target = Entities.require(Mc.requirePlayer(), query, maxDistance);
+            if (selector.crosshair()) {
+                aimed = Selector.inCrosshair();
+                target = aimed.getEntity();
+            } else {
+                target = selector.resolve(Mc.requirePlayer());
+            }
         }
 
         @Override
         public boolean tick(CallContext call) {
             LocalPlayer player = Mc.requirePlayer();
 
-            if (!approach.reached(player, target)) {
-                return false;
-            }
+            if (aimed != null) {
+                /* Where on the entity the crosshair met it, which is what a player's click sends. */
+                Mc.client().gameMode.interact(player, target, aimed, InteractionHand.MAIN_HAND);
+            } else {
+                if (!approach.reached(player, target)) {
+                    return false;
+                }
 
-            Vec3 eyes = target.getEyePosition();
-            player.lookAt(EntityAnchorArgument.Anchor.EYES, eyes);
-            Mc.client().gameMode.interact(player, target, new EntityHitResult(target, eyes),
-                    InteractionHand.MAIN_HAND);
+                Vec3 eyes = target.getEyePosition();
+                player.lookAt(EntityAnchorArgument.Anchor.EYES, eyes);
+                Mc.client().gameMode.interact(player, target, new EntityHitResult(target, eyes),
+                        InteractionHand.MAIN_HAND);
+            }
             player.swing(InteractionHand.MAIN_HAND);
 
             call.ok("Right-clicked " + Entities.named(target) + ".");

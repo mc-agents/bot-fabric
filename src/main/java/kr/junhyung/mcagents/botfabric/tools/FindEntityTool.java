@@ -1,11 +1,14 @@
 package kr.junhyung.mcagents.botfabric.tools;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import kr.junhyung.mcagents.botfabric.Mc;
+import kr.junhyung.mcagents.botfabric.text.Segments;
 import kr.junhyung.mcagents.botfabric.tool.ReadTool;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
@@ -25,20 +28,30 @@ public final class FindEntityTool extends ReadTool {
 
         LocalPlayer player = Mc.requirePlayerEvenIfDead();
 
+        List<Entity> loaded = new ArrayList<>();
         List<Entity> found = new ArrayList<>();
         for (Entity entity : Mc.client().level.entitiesForRendering()) {
-            if (entity == player || entity.distanceTo(player) > maxDistance) {
+            if (entity == player) {
                 continue;
             }
-            if (query == null || Entities.matches(entity, query)) {
+            loaded.add(entity);
+            if (entity.distanceTo(player) <= maxDistance && (query == null || Entities.matches(entity, query))) {
                 found.add(entity);
             }
         }
         found.sort(Comparator.comparingDouble(player::distanceTo));
 
+        /* From everything loaded: a label out of range can still be over an entity that is in it. */
+        Map<Entity, Entity> labels = Nameplates.byEntity(loaded);
+
         JsonArray entities = new JsonArray();
         for (Entity entity : found.subList(0, Math.min(count, found.size()))) {
-            entities.add(Entities.describe(entity, player));
+            JsonObject described = Entities.describe(entity, player);
+            Entity label = labels.get(entity);
+            described.addProperty("nameplate", label == null ? null : Nameplates.text(label).getString());
+            described.add("nameplateComponent",
+                    label == null ? JsonNull.INSTANCE : Segments.raw(Nameplates.text(label)));
+            entities.add(described);
         }
 
         JsonObject data = new JsonObject();

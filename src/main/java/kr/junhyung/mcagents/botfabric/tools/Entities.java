@@ -117,6 +117,7 @@ final class Entities {
 
     static JsonObject describe(Entity entity, Entity from) {
         JsonObject described = new JsonObject();
+        described.addProperty("id", entity.getId());
         described.addProperty("label", label(entity));
         /* A nameplate is a HUD on a server that draws with glyphs, so the component travels too. */
         described.add("labelComponent", labelComponent(entity));
