@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.BotFabricClient;
 import kr.junhyung.mcagents.botfabric.Mc;
+import kr.junhyung.mcagents.botfabric.event.EventPump;
 import kr.junhyung.mcagents.botfabric.render.FrameBudget;
 import kr.junhyung.mcagents.botfabric.session.ConnectTask;
 import kr.junhyung.mcagents.botfabric.session.Session;
@@ -29,6 +30,7 @@ public final class Dispatcher {
     private final TaskScheduler scheduler;
     private final Session session;
     private final String botName;
+    private final EventPump events;
 
     private final Map<String, CallContext> inFlight = new ConcurrentHashMap<>();
     private final Map<String, ScheduledFuture<?>> deadlines = new ConcurrentHashMap<>();
@@ -41,11 +43,13 @@ public final class Dispatcher {
 
     private volatile RpcClient client;
 
-    public Dispatcher(ToolRegistry tools, TaskScheduler scheduler, Session session, String botName) {
+    public Dispatcher(ToolRegistry tools, TaskScheduler scheduler, Session session, String botName,
+            EventPump events) {
         this.tools = tools;
         this.scheduler = scheduler;
         this.session = session;
         this.botName = botName;
+        this.events = events;
     }
 
     public JsonObject hello() {
@@ -107,6 +111,7 @@ public final class Dispatcher {
 
     private void onHelloOk(JsonObject message) {
         LOGGER.info("linked as session {}", Json.string(message, "sessionId", "?"));
+        events.configure(message);
         /* "idle" is the protocol's word for linked and in no world. */
         session.report("idle");
     }
