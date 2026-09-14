@@ -26,6 +26,7 @@
     "ItemDisplayInvoker",
     "KeyboardInputMixin",
     "MerchantScreenInvoker",
+    "ClientPacketListenerAccessor",
     "MinecraftAccessor",
     "MinecraftMixin",
     "RecipeToastMixin",

@@ -187,6 +187,7 @@ public class BotFabricClient implements ClientModInitializer {
         events.register();
         boolean[] configured = new boolean[1];
         ClientTickEvents.END_CLIENT_TICK.register(minecraft -> {
+            HealthServer.ticked();
             if (!configured[0]) {
                 configured[0] = true;
                 minecraft.options.pauseOnLostFocus = false;
