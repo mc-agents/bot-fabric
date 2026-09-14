@@ -20,6 +20,7 @@
     "CreativeModeInventoryScreenInvoker",
     "DeathScreenAccessor",
     "DialogScreenAccessor",
+    "DisconnectedScreenAccessor",
     "FishingHookAccessor",
     "FramerateLimitTrackerMixin",
     "ItemCooldownsAccessor",

@@ -1,6 +1,7 @@
 package kr.junhyung.mcagents.botfabric.session;
 
 import kr.junhyung.mcagents.botfabric.Mc;
+import kr.junhyung.mcagents.botfabric.mixin.DisconnectedScreenAccessor;
 import kr.junhyung.mcagents.botfabric.rpc.CallContext;
 import kr.junhyung.mcagents.botfabric.task.Task;
 import kr.junhyung.mcagents.botfabric.tool.ToolError;
@@ -70,8 +71,15 @@ public final class ConnectTask implements Task {
             dialled = true;
             dial();
         }
-        if (Mc.screen() instanceof DisconnectedScreen) {
-            String reason = Mc.screen().getTitle().getString();
+        if (Mc.screen() instanceof DisconnectedScreen disconnected) {
+            /*
+            The title alone is "Connection Lost". What the server or the proxy said -- "There are no
+            available servers", a kick message, a whitelist -- is the reason under it, and it is the
+            part that says where to look.
+            */
+            String title = disconnected.getTitle().getString();
+            String said = ((DisconnectedScreenAccessor) disconnected).mcagents$details().reason().getString();
+            String reason = said.isBlank() || said.equals(title) ? title : title + ": " + said;
             session.report("disconnected", reason, reason);
             call.fail(ToolError.TOOL, "REFUSED", "the server refused the connection: " + reason, true);
             return true;
