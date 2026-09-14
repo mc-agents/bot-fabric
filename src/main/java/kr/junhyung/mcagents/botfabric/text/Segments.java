@@ -26,7 +26,9 @@ public final class Segments {
      * <p>A server draws a HUD by stacking a bar glyph, a spacer, and a label. The glyphs are
      * private use area codepoints that mean nothing as text, and a spacer with them removed holds
      * whitespace and nothing else: it is a position on the screen rather than something to read,
-     * so it does not become a segment.
+     * so it does not become a segment. A piece that was only ever a space is text, though: a chat
+     * line built as "Cleared 0", a space and "[Track]" read "Cleared 0[Track]" while the screen
+     * showed the gap.
      *
      * <p>What is left is not trimmed. "Mana " and "Mana" are different pieces, and a server that
      * writes a label and a number as two components puts the space in one of them.
@@ -60,7 +62,8 @@ public final class Segments {
         }
         component.visit((style, text) -> {
             String readable = GLYPHS.matcher(text).replaceAll("");
-            if (!readable.isBlank()) {
+            boolean spacer = readable.isBlank() && readable.length() != text.length();
+            if (!readable.isEmpty() && !spacer) {
                 segments.add(segment(style, readable));
             }
             return Optional.empty();
@@ -80,6 +83,9 @@ public final class Segments {
     public static String describe(Component component) {
         StringBuilder said = new StringBuilder();
         for (var element : of(component)) {
+            if (element.getAsJsonObject().get("text").getAsString().isBlank()) {
+                continue;
+            }
             if (!said.isEmpty()) {
                 said.append(' ');
             }
