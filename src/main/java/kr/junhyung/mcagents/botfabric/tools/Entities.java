@@ -8,13 +8,20 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import kr.junhyung.mcagents.botfabric.Mc;
+import kr.junhyung.mcagents.botfabric.mixin.BlockDisplayInvoker;
+import kr.junhyung.mcagents.botfabric.mixin.ItemDisplayInvoker;
 import kr.junhyung.mcagents.botfabric.text.Segments;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 
 /** How an entity is described to a reader, and how a caller's query finds one. */
 final class Entities {
@@ -116,6 +123,45 @@ final class Entities {
         described.addProperty("type", id(entity));
         described.add("position", Positions.json(entity.position()));
         described.addProperty("distance", Math.round(entity.distanceTo(from) * 10.0) / 10.0);
+        described.add("item", entity instanceof Display.ItemDisplay display
+                ? shown(((ItemDisplayInvoker) display).mcagents$itemStack()) : JsonNull.INSTANCE);
+        described.add("block", entity instanceof Display.BlockDisplay display
+                ? block(((BlockDisplayInvoker) display).mcagents$blockState()) : JsonNull.INSTANCE);
         return described;
+    }
+
+    /**
+     * What an item display holds up. Every one of them is called item_display, and what tells a
+     * chair from a signpost is the item and the model it is drawn with.
+     */
+    private static JsonElement shown(ItemStack item) {
+        if (item.isEmpty()) {
+            return JsonNull.INSTANCE;
+        }
+        boolean named = item.has(DataComponents.CUSTOM_NAME);
+
+        JsonObject shown = new JsonObject();
+        shown.addProperty("name", Items.name(item));
+        shown.addProperty("count", item.getCount());
+        shown.addProperty("label", named ? item.getHoverName().getString() : null);
+        shown.add("labelComponent", named ? Segments.raw(item.get(DataComponents.CUSTOM_NAME)) : JsonNull.INSTANCE);
+        shown.addProperty("itemModel", Items.model(item));
+        return shown;
+    }
+
+    private static JsonObject block(BlockState state) {
+        JsonObject properties = new JsonObject();
+        for (Property<?> property : state.getProperties()) {
+            properties.addProperty(property.getName(), name(state, property));
+        }
+
+        JsonObject block = new JsonObject();
+        block.addProperty("name", BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath());
+        block.add("properties", properties);
+        return block;
+    }
+
+    private static <T extends Comparable<T>> String name(BlockState state, Property<T> property) {
+        return property.getName(state.getValue(property));
     }
 }

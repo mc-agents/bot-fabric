@@ -22,7 +22,12 @@ public final class ReadScoreboardTool extends ReadTool {
     @Override
     protected JsonObject read(JsonObject args) {
         String wanted = args.has("slot") ? args.get("slot").getAsString() : "sidebar";
-        DisplaySlot slot = DisplaySlot.CODEC.byName(wanted);
+        /*
+        The catalogue spells the slot the way the protocol document's first bot did, and the game
+        spells it below_name. Looking "belowName" up as it is found nothing, so a below-name
+        objective always read as no scoreboard.
+        */
+        DisplaySlot slot = DisplaySlot.CODEC.byName("belowName".equals(wanted) ? "below_name" : wanted);
 
         JsonObject data = new JsonObject();
         data.addProperty("slot", wanted);

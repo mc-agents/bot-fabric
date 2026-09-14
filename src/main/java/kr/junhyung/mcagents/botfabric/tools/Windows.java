@@ -18,7 +18,6 @@ import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.ItemLore;
 
 /**
  * The window DTOs, in the shape the catalogue's {@code resultSchema} decides.
@@ -145,18 +144,7 @@ final class Windows {
         entry.add("labelComponent",
                 named ? Segments.raw(stack.get(DataComponents.CUSTOM_NAME)) : JsonNull.INSTANCE);
 
-        JsonArray lore = new JsonArray();
-        JsonArray loreComponents = new JsonArray();
-        ItemLore lines = stack.get(DataComponents.LORE);
-
-        if (lines != null) {
-            for (Component line : lines.lines()) {
-                lore.add(line.getString());
-                loreComponents.add(Segments.raw(line));
-            }
-        }
-        entry.add("lore", lore);
-        entry.add("loreComponents", loreComponents);
+        Items.lore(entry, stack);
 
         return entry;
     }

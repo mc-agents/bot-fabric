@@ -226,6 +226,7 @@ public class BotFabricClient implements ClientModInitializer {
                 Mc.setScreen(null);
             }
             session.noticeDeath();
+            events.flush();
             scheduler.tick();
             UseKey.tick();
         });
@@ -233,6 +234,7 @@ public class BotFabricClient implements ClientModInitializer {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, minecraft) -> {
             /* A crouch or a held key from the last world would otherwise be the first thing done in the next. */
             Steering.reset();
+            events.closeAll();
             session.report("disconnected");
         });
 

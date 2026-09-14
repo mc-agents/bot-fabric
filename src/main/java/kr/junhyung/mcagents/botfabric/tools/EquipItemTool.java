@@ -44,6 +44,16 @@ public final class EquipItemTool extends ActionTool {
 
         LocalPlayer player = Mc.requirePlayer();
         InventoryMenu menu = player.inventoryMenu;
+
+        /*
+        With a window open the server takes clicks for that window only, and drops these without a
+        word: the tool used to answer "Equipped" for an item that never moved. A player cannot reach
+        their own inventory from behind a chest either, so this asks for the window to be closed.
+        */
+        if (player.containerMenu != menu) {
+            throw ToolException.refused("WINDOW_OPEN", "A window is open, and equip-item works in the bot's own"
+                    + " inventory. Close it with close-window first.");
+        }
         int source = find(menu, query);
         String item = BuiltInRegistries.ITEM.getKey(menu.getSlot(source).getItem().getItem()).getPath();
 

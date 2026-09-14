@@ -31,8 +31,15 @@ import net.minecraft.world.item.ItemStack;
  * click leaves both untouched, and a sentence naming only the slot cannot tell that from a click
  * that worked. A swap moves a second stack that may not be in the window at all -- the offhand
  * never is -- so that one is read off the inventory and goes back as well.
+ *
+ * <p>A click outside the window is PICKUP on slot -999, which drops the cursor: all of it on button
+ * 0 and one item on button 1. It lands on no slot, so what goes back as before and after is the
+ * cursor.
  */
 public final class ClickSlotTool extends ReadTool {
+
+    /** Clicking outside the window. The number is the protocol's, not ours. */
+    private static final int OUTSIDE = -999;
 
     public ClickSlotTool() {
         super("click-slot");
@@ -42,10 +49,21 @@ public final class ClickSlotTool extends ReadTool {
     protected JsonObject read(JsonObject args) {
         Args parsed = new Args(args);
         int slot = parsed.integer("slot", -1);
+        boolean outside = parsed.bool("outside", false);
         String button = parsed.string("button");
         boolean shift = parsed.bool("shift", false);
         String mode = parsed.string("mode", "click");
         int hotbar = parsed.integer("hotbar", 0);
+
+        if (outside) {
+            if (slot >= 0 || !"click".equals(mode) || shift) {
+                throw ToolException.badArgs("a click outside the window is a plain click, and takes no slot, mode or shift");
+            }
+            return outside(Windows.require(), button);
+        }
+        if (slot < 0) {
+            throw ToolException.badArgs("click-slot needs a slot, or outside for a click outside the window");
+        }
 
         AbstractContainerScreen<?> container = Windows.require();
         AbstractContainerMenu menu = container.getMenu();
@@ -66,6 +84,7 @@ public final class ClickSlotTool extends ReadTool {
 
         JsonObject data = new JsonObject();
         data.addProperty("slot", slot);
+        data.addProperty("outside", false);
         data.addProperty("button", button);
         data.addProperty("shift", shift);
         data.addProperty("mode", mode);
@@ -83,6 +102,27 @@ public final class ClickSlotTool extends ReadTool {
             data.add("swapped", swapped);
         }
 
+        return data;
+    }
+
+    private static JsonObject outside(AbstractContainerScreen<?> container, String button) {
+        Mc.requirePlayer();
+        AbstractContainerMenu menu = container.getMenu();
+        ItemStack before = menu.getCarried().copy();
+
+        Windows.click(container, OUTSIDE, "right".equals(button) ? 1 : 0, ContainerInput.PICKUP);
+
+        JsonObject data = new JsonObject();
+        data.add("slot", JsonNull.INSTANCE);
+        data.addProperty("outside", true);
+        data.addProperty("button", button);
+        data.addProperty("shift", false);
+        data.addProperty("mode", "click");
+        data.add("hotbar", JsonNull.INSTANCE);
+        data.add("before", Windows.held(before));
+        data.add("after", Windows.held(menu.getCarried()));
+        data.add("cursor", Windows.held(menu.getCarried()));
+        data.add("swapped", JsonNull.INSTANCE);
         return data;
     }
 
