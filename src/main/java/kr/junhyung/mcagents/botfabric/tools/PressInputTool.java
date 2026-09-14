@@ -247,7 +247,10 @@ public final class PressInputTool implements Tool {
                     UseKey.hold();
                     click(options.keyUse);
                 }
-                case ATTACK -> hold(options.keyAttack);
+                case ATTACK -> {
+                    AttackKey.hold();
+                    click(options.keyAttack);
+                }
                 case HOTBAR -> hold(options.keyHotbarSlots[slot]);
                 case SWAP_OFFHAND -> hold(options.keySwapOffhand);
                 case DROP -> hold(options.keyDrop);
@@ -276,7 +279,7 @@ public final class PressInputTool implements Tool {
                 case SPRINT -> Steering.tap(Steering.Tap.SPRINT, false);
                 /* Up through the key, so the keybinding handler lets go of an item in use and tells the server. */
                 case USE -> UseKey.release();
-                case ATTACK -> options.keyAttack.setDown(false);
+                case ATTACK -> AttackKey.release();
                 case HOTBAR -> options.keyHotbarSlots[slot].setDown(false);
                 case SWAP_OFFHAND -> options.keySwapOffhand.setDown(false);
                 case DROP -> options.keyDrop.setDown(false);

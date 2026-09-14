@@ -27,6 +27,7 @@
     "KeyboardInputMixin",
     "MerchantScreenInvoker",
     "MinecraftAccessor",
+    "MinecraftMixin",
     "RecipeToastMixin",
     "ScreenInvoker",
     "SignEditScreenAccessor",
