@@ -120,14 +120,17 @@ public final class EventPump {
             /* And the component itself, because a line with a click event on it can be pressed. */
             ChatLines.heard(message);
         }
+        /*
+        A press waiting on a line reacts here, before the tick that reads the keys, not a round trip
+        later -- and whether the server wants the feed pushed or not: a muted effect feed still has
+        a bite in it for the press that is waiting on one.
+        */
+        if (kind.equals("actionBar") || kind.equals("title") || kind.equals("effect")) {
+            FeedWatch.saw(kind, kind.equals("effect") ? message.getString() : Segments.readable(message));
+        }
         /* Before the line is built: a muted effect feed is muted because it is a firehose. */
         if (!folder.wants(kind)) {
             return;
-        }
-
-        /* A press waiting on a line reacts here, before the tick that reads the keys, not a round trip later. */
-        if (kind.equals("actionBar") || kind.equals("title") || kind.equals("effect")) {
-            FeedWatch.saw(kind, kind.equals("effect") ? message.getString() : Segments.readable(message));
         }
 
         JsonObject event = new JsonObject();
