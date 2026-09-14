@@ -1,13 +1,14 @@
 # bot-fabric
 
-A real Minecraft client, driven over the mc-agents bot RPC protocol. It is the bot behind the MCP
-surface; there was a second one, `bot-mineflayer`, and it is archived. The contract lives in
+A real Minecraft client, driven over the mc-agents bot RPC protocol. The other kind of bot is
+`bot-azalea`, a headless protocol client for many bots at once; `bot-mineflayer`, the first, is
+archived. The contract lives in
 [`mcp-server/docs/bot-protocol.md`](https://github.com/mc-agents/mcp-server/blob/main/docs/bot-protocol.md),
 and the plan it comes from, with what became of it, is `mcp-server/docs/architecture.md`.
 
 This bot exists for the things a reimplementation of the client cannot do: **see the screen** and
-**press a dialog button**. Both are proved below. It answers every one of the forty-six tools a bot
-is asked for.
+**press a dialog button**. Both are proved below. It answers every tool the catalogue lists
+for the `fabric` kind.
 
 ## What was proved
 
