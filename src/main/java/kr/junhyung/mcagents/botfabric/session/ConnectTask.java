@@ -19,6 +19,7 @@ public final class ConnectTask implements Task {
     private final long spawnTimeoutMs;
 
     private long startedAt;
+    private boolean dialled;
 
     public ConnectTask(Session session, String host, int port, String username, long spawnTimeoutMs) {
         this.session = session;
@@ -39,7 +40,15 @@ public final class ConnectTask implements Task {
         session.rememberTarget(host, port, username);
         session.applyUsername(username);
         session.report("connecting");
+    }
 
+    /*
+    Not before the client has finished loading. When the first resource load ends the client puts up
+    its initial screen, the title screen, whatever is on screen by then; a join that raced it was left
+    in the world under a title screen that Escape does not close, and every tool that refuses to act
+    behind a screen refused from then on. That only happened where loading is slow, on a busy runner.
+    */
+    private void dial() {
         Minecraft minecraft = Mc.client();
         ServerAddress target = new ServerAddress(host, port);
         ServerData data = new ServerData(username + "@" + host, host + ":" + port, ServerData.Type.OTHER);
@@ -57,6 +66,10 @@ public final class ConnectTask implements Task {
     @Override
     public boolean tick(CallContext call) {
         Minecraft minecraft = Mc.client();
+        if (!dialled && minecraft.isGameLoadFinished()) {
+            dialled = true;
+            dial();
+        }
         if (Mc.screen() instanceof DisconnectedScreen) {
             String reason = Mc.screen().getTitle().getString();
             session.report("disconnected", reason, reason);
