@@ -1,5 +1,6 @@
 package kr.junhyung.mcagents.botfabric.tools;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.Mc;
@@ -39,7 +40,9 @@ import net.minecraft.world.item.ItemStack;
  * cursor.
  *
  * <p>Answered once the server has sent the window back, through {@link ServerResync}: the client's
- * own prediction of a click a plugin cancelled is exactly what this answer must not claim.
+ * own prediction of a click a plugin cancelled is exactly what this answer must not claim. A click the
+ * server answered by opening another window, or by closing this one, goes back as that window instead,
+ * and the slot it landed on is not described: that window is gone.
  */
 public final class ClickSlotTool implements Tool {
 
@@ -97,11 +100,11 @@ public final class ClickSlotTool implements Tool {
         ItemStack swappedBefore = swapIndex < 0 ? null : player.getInventory().getItem(swapIndex).copy();
 
         ServerResync.click(call, name(), container, () -> Windows.click(container, slot, input.button(), input.type()),
-                () -> clicked(menu, slot, button, shift, mode, hotbar, swapIndex, before, swappedBefore));
+                window -> clicked(menu, slot, button, shift, mode, hotbar, swapIndex, before, swappedBefore, window));
     }
 
     private static JsonObject clicked(AbstractContainerMenu menu, int slot, String button, boolean shift,
-            String mode, int hotbar, int swapIndex, ItemStack before, ItemStack swappedBefore) {
+            String mode, int hotbar, int swapIndex, ItemStack before, ItemStack swappedBefore, JsonElement window) {
         JsonObject data = new JsonObject();
         data.addProperty("slot", slot);
         data.addProperty("outside", false);
@@ -110,6 +113,14 @@ public final class ClickSlotTool implements Tool {
         data.addProperty("mode", mode);
         data.addProperty("hotbar", hotbar == 0 ? null : hotbar);
         data.add("before", Windows.held(before));
+        data.add("window", window);
+        if (!window.isJsonNull()) {
+            /* The window clicked is gone, and what its slots held is the client's guess. */
+            data.add("after", JsonNull.INSTANCE);
+            data.add("cursor", Windows.held(Mc.requirePlayer().containerMenu.getCarried()));
+            data.add("swapped", JsonNull.INSTANCE);
+            return data;
+        }
         data.add("after", Windows.held(menu.getSlot(slot).getItem()));
         data.add("cursor", Windows.held(menu.getCarried()));
 
@@ -139,10 +150,11 @@ public final class ClickSlotTool implements Tool {
 
         ServerResync.click(call, name(), container,
                 () -> Windows.click(container, OUTSIDE, "right".equals(button) ? 1 : 0, ContainerInput.PICKUP),
-                () -> droppedOutside(menu, button, before));
+                window -> droppedOutside(menu, button, before, window));
     }
 
-    private static JsonObject droppedOutside(AbstractContainerMenu menu, String button, ItemStack before) {
+    private static JsonObject droppedOutside(AbstractContainerMenu menu, String button, ItemStack before, JsonElement window) {
+        AbstractContainerMenu now = window.isJsonNull() ? menu : Mc.requirePlayer().containerMenu;
         JsonObject data = new JsonObject();
         data.add("slot", JsonNull.INSTANCE);
         data.addProperty("outside", true);
@@ -151,9 +163,10 @@ public final class ClickSlotTool implements Tool {
         data.addProperty("mode", "click");
         data.add("hotbar", JsonNull.INSTANCE);
         data.add("before", Windows.held(before));
-        data.add("after", Windows.held(menu.getCarried()));
-        data.add("cursor", Windows.held(menu.getCarried()));
+        data.add("after", Windows.held(now.getCarried()));
+        data.add("cursor", Windows.held(now.getCarried()));
         data.add("swapped", JsonNull.INSTANCE);
+        data.add("window", window);
         return data;
     }
 

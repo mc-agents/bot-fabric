@@ -1,14 +1,17 @@
 package kr.junhyung.mcagents.botfabric.mixin;
 
 import kr.junhyung.mcagents.botfabric.event.Feeds;
+import kr.junhyung.mcagents.botfabric.tools.HookYanks;
 import kr.junhyung.mcagents.botfabric.tools.ServerResync;
 import kr.junhyung.mcagents.botfabric.tools.StatsAnswers;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.game.ClientboundAwardStatsPacket;
+import net.minecraft.network.protocol.game.ClientboundContainerClosePacket;
 import net.minecraft.network.protocol.game.ClientboundContainerSetContentPacket;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
@@ -41,6 +44,18 @@ public class ClientPacketListenerMixin {
     @Inject(method = "handleContainerContent", at = @At("TAIL"))
     private void botfabric$windowContents(ClientboundContainerSetContentPacket packet, CallbackInfo info) {
         ServerResync.arrived(packet.containerId());
+    }
+
+    /* A window the server closed answers a click on it: no contents will follow for that id. */
+    @Inject(method = "handleContainerClose", at = @At("TAIL"))
+    private void botfabric$windowClosed(ClientboundContainerClosePacket packet, CallbackInfo info) {
+        ServerResync.closed(packet.getContainerId());
+    }
+
+    /* A bobber the server pulls under is a bite, whether or not vanilla's flag says so. */
+    @Inject(method = "handleSetEntityMotion", at = @At("TAIL"))
+    private void botfabric$motion(ClientboundSetEntityMotionPacket packet, CallbackInfo info) {
+        HookYanks.moved(packet.id(), packet.movement());
     }
 
     @Inject(method = "setActionBarText", at = @At("TAIL"))

@@ -2,6 +2,7 @@ package kr.junhyung.mcagents.botfabric.tools;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,17 +83,19 @@ public final class DragSlotsTool implements Tool {
         }
         ServerResync.click(call, name(), container,
                 () -> Windows.click(container, OUTSIDE, AbstractContainerMenu.getQuickcraftMask(END, kind), ContainerInput.QUICK_CRAFT),
-                () -> dragged(menu, slots, before, carried, button));
+                window -> dragged(menu, slots, before, carried, button, window));
     }
 
     private static JsonObject dragged(AbstractContainerMenu menu, List<Integer> slots, List<ItemStack> before,
-            ItemStack carried, String button) {
+            ItemStack carried, String button, JsonElement window) {
+        /* A window the server replaced is gone, and what its slots held is the client's guess. */
+        boolean replaced = !window.isJsonNull();
         JsonArray results = new JsonArray();
         for (int i = 0; i < slots.size(); i++) {
             JsonObject entry = new JsonObject();
             entry.addProperty("slot", slots.get(i));
             entry.add("before", Windows.held(before.get(i)));
-            entry.add("after", Windows.held(menu.getSlot(slots.get(i)).getItem()));
+            entry.add("after", replaced ? JsonNull.INSTANCE : Windows.held(menu.getSlot(slots.get(i)).getItem()));
             results.add(entry);
         }
 
@@ -100,7 +103,8 @@ public final class DragSlotsTool implements Tool {
         data.addProperty("button", button);
         data.add("slots", results);
         data.add("carried", Windows.held(carried));
-        data.add("cursor", Windows.held(menu.getCarried()));
+        data.add("cursor", Windows.held((replaced ? Mc.requirePlayer().containerMenu : menu).getCarried()));
+        data.add("window", window);
 
         return data;
     }

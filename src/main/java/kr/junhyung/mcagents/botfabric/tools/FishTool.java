@@ -11,6 +11,7 @@ import kr.junhyung.mcagents.botfabric.tool.CatalogHashes;
 import kr.junhyung.mcagents.botfabric.tool.Tool;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.FishingHook;
@@ -24,9 +25,10 @@ import net.minecraft.world.item.Items;
  * Cast, wait for the bite, reel in.
  *
  * <p>The bite is not guessed at. A hook carries a synced flag saying whether a fish is on it, so the
- * server tells the client outright and this reads it. Listening for the splash sound instead --
- * which is what an auto-fisher usually does -- would call a bite whenever anything else landed in
- * water nearby, and the field is right there.
+ * server tells the client outright and this reads it. A plugin running its own fishing never sets the
+ * flag, and gives its bite the way vanilla also does, by pulling the floating bobber under; that pull
+ * is a packet too, and {@link HookYanks} keeps it. Listening for the splash sound instead -- which is
+ * what an auto-fisher usually does -- would call a bite whenever anything else landed in water nearby.
  *
  * <p>The count of items is how the answer describes what was caught, because what a server's loot
  * table hands over is its business and the tool's job is to say that something arrived.
@@ -43,6 +45,12 @@ public final class FishTool implements Tool {
 
     /** The catch flies at the bot and lands a moment later, so the count is taken after it. */
     private static final int LANDING_TICKS = 30;
+
+    /**
+     * How long the bobber floats before a pull under counts. It lands in the water still falling, and
+     * the server's last word on that fall is a motion as steep as a bite's.
+     */
+    private static final int FLOATING_TICKS = 10;
 
     /** Where the bot's own items start in its inventory menu. */
     private static final int BAG_START = 9;
@@ -75,6 +83,7 @@ public final class FishTool implements Tool {
         private int ticks;
         private int reeling;
         private long castAtNanos;
+        private long floatingSince = Long.MAX_VALUE;
 
         private FishTask(long timeoutMs) {
             this.timeoutMs = timeoutMs;
@@ -91,6 +100,7 @@ public final class FishTool implements Tool {
 
             hold(player);
             before = count(player);
+            HookYanks.forget();
 
             Mc.client().gameMode.useItem(player, InteractionHand.MAIN_HAND);
             castAtNanos = System.nanoTime();
@@ -113,7 +123,18 @@ public final class FishTool implements Tool {
                         + " " + hooks() + " Facing a block rather than water is the usual reason.");
             }
 
-            if (((FishingHookAccessor) hook).botfabric$biting()) {
+            long now = Mc.client().level.getGameTime();
+            /* The hook's own test for water. Entity.isInWater stayed false for a bobber floating in the pool. */
+            boolean floating = Mc.client().level.getFluidState(hook.blockPosition()).is(FluidTags.WATER);
+            if (!floating) {
+                floatingSince = Long.MAX_VALUE;
+            } else if (floatingSince == Long.MAX_VALUE) {
+                floatingSince = now;
+            }
+            boolean pulledUnder = floatingSince != Long.MAX_VALUE
+                    && HookYanks.pulledAt(hook) >= floatingSince + FLOATING_TICKS;
+
+            if (((FishingHookAccessor) hook).botfabric$biting() || pulledUnder) {
                 /* Reeling in is the same click as casting, and it is what brings the catch over. */
                 Mc.client().gameMode.useItem(player, InteractionHand.MAIN_HAND);
                 reeling = 1;
