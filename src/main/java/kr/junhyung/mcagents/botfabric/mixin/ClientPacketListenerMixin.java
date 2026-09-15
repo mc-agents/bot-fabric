@@ -14,6 +14,7 @@ import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -75,6 +76,12 @@ public class ClientPacketListenerMixin {
 
     @Inject(method = "handleSoundEvent", at = @At("TAIL"))
     private void botfabric$sound(ClientboundSoundPacket packet, CallbackInfo info) {
+        Feeds.effect("sound", packet.getSound().value().location().toString());
+    }
+
+    /* A sound played at an entity rather than at a place, which a plugin does with playSound(player, ...). */
+    @Inject(method = "handleSoundEntityEvent", at = @At("TAIL"))
+    private void botfabric$entitySound(ClientboundSoundEntityPacket packet, CallbackInfo info) {
         Feeds.effect("sound", packet.getSound().value().location().toString());
     }
 
