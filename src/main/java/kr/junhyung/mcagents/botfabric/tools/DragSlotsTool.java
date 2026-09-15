@@ -81,7 +81,7 @@ public final class DragSlotsTool implements Tool {
         for (int slot : slots) {
             Windows.click(container, slot, AbstractContainerMenu.getQuickcraftMask(ADD_SLOT, kind), ContainerInput.QUICK_CRAFT);
         }
-        ServerResync.click(call, name(), container,
+        ServerResync.click(ServerResync.Reply.of(call, name()), container,
                 () -> Windows.click(container, OUTSIDE, AbstractContainerMenu.getQuickcraftMask(END, kind), ContainerInput.QUICK_CRAFT),
                 window -> dragged(menu, slots, before, carried, button, window));
     }

@@ -19,6 +19,8 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.List;
+
 /**
  * The window DTOs, in the shape the catalogue's {@code resultSchema} decides.
  *
@@ -52,6 +54,30 @@ final class Windows {
     static void click(AbstractContainerScreen<?> screen, int slot, int button, ContainerInput input) {
         Slot target = slot >= 0 ? screen.getMenu().getSlot(slot) : null;
         ((AbstractContainerScreenInvoker) screen).mcagents$slotClicked(target, slot, button, input);
+    }
+
+    /** Where the screen's own origin sits, which a slot's x and y are relative to. */
+    static int left(AbstractContainerScreen<?> screen) {
+        return ((AbstractContainerScreenInvoker) screen).mcagents$leftPos();
+    }
+
+    static int top(AbstractContainerScreen<?> screen) {
+        return ((AbstractContainerScreenInvoker) screen).mcagents$topPos();
+    }
+
+    /** The slot the last frame found under the cursor, or null. */
+    static Slot hovered(AbstractContainerScreen<?> screen) {
+        return ((AbstractContainerScreenInvoker) screen).mcagents$hoveredSlot();
+    }
+
+    /** The tooltip the screen builds for a stack in one of its slots, line by line. */
+    static List<Component> tooltip(AbstractContainerScreen<?> screen, ItemStack stack) {
+        return ((AbstractContainerScreenInvoker) screen).mcagents$tooltipFor(stack);
+    }
+
+    /** Whether the screen still draws a stack's tooltip while the cursor holds something. */
+    static boolean tooltipWithCursor(AbstractContainerScreen<?> screen, ItemStack stack) {
+        return ((AbstractContainerScreenInvoker) screen).mcagents$showTooltipWithItemInHand(stack);
     }
 
     /**

@@ -61,10 +61,14 @@ public final class ClickSlotTool implements Tool {
 
     @Override
     public void invoke(CallContext call, JsonObject args) {
-        Mc.immediate(call, () -> click(call, args));
+        Mc.immediate(call, () -> click(ServerResync.Reply.of(call, name()), args));
     }
 
-    private void click(CallContext call, JsonObject args) {
+    /**
+     * The click, answered through {@code reply} once the server has sent the window back. Client
+     * thread only; a refusal before anything is sent is thrown rather than replied.
+     */
+    static void click(ServerResync.Reply reply, JsonObject args) {
         Args parsed = new Args(args);
         int slot = parsed.integer("slot", -1);
         boolean outside = parsed.bool("outside", false);
@@ -77,7 +81,7 @@ public final class ClickSlotTool implements Tool {
             if (slot >= 0 || !"click".equals(mode) || shift) {
                 throw ToolException.badArgs("a click outside the window is a plain click, and takes no slot, mode or shift");
             }
-            outside(call, Windows.require(), button);
+            outside(reply, Windows.require(), button);
             return;
         }
         if (slot < 0) {
@@ -99,7 +103,7 @@ public final class ClickSlotTool implements Tool {
         ItemStack before = menu.getSlot(slot).getItem().copy();
         ItemStack swappedBefore = swapIndex < 0 ? null : player.getInventory().getItem(swapIndex).copy();
 
-        ServerResync.click(call, name(), container, () -> Windows.click(container, slot, input.button(), input.type()),
+        ServerResync.click(reply, container, () -> Windows.click(container, slot, input.button(), input.type()),
                 window -> clicked(menu, slot, button, shift, mode, hotbar, swapIndex, before, swappedBefore, window));
     }
 
@@ -143,12 +147,12 @@ public final class ClickSlotTool implements Tool {
         return data;
     }
 
-    private void outside(CallContext call, AbstractContainerScreen<?> container, String button) {
+    private static void outside(ServerResync.Reply reply, AbstractContainerScreen<?> container, String button) {
         Mc.requirePlayer();
         AbstractContainerMenu menu = container.getMenu();
         ItemStack before = menu.getCarried().copy();
 
-        ServerResync.click(call, name(), container,
+        ServerResync.click(reply, container,
                 () -> Windows.click(container, OUTSIDE, "right".equals(button) ? 1 : 0, ContainerInput.PICKUP),
                 window -> droppedOutside(menu, button, before, window));
     }

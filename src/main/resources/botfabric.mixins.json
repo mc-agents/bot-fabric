@@ -23,6 +23,7 @@
     "DisconnectedScreenAccessor",
     "FishingHookAccessor",
     "FramerateLimitTrackerMixin",
+    "GameRendererMixin",
     "ItemCooldownsAccessor",
     "ItemDisplayInvoker",
     "KeyboardInputMixin",

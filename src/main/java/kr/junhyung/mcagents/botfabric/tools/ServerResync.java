@@ -7,6 +7,7 @@ import kr.junhyung.mcagents.botfabric.Mc;
 import kr.junhyung.mcagents.botfabric.rpc.CallContext;
 import kr.junhyung.mcagents.botfabric.text.Segments;
 import kr.junhyung.mcagents.botfabric.tool.ToolError;
+import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -53,23 +54,45 @@ public final class ServerResync {
     /** Client thread only. */
     private static final List<Waiting> WAITING = new ArrayList<>();
 
+    /**
+     * Where a click's answer goes: the call that made it, or one step of a sequence that answers
+     * its call once for all of its steps.
+     */
+    interface Reply {
+        void ok(JsonObject data);
+
+        void fail(ToolException refusal);
+
+        static Reply of(CallContext call, String tool) {
+            return new Reply() {
+                @Override
+                public void ok(JsonObject data) {
+                    call.ok(tool, data);
+                }
+
+                @Override
+                public void fail(ToolException refusal) {
+                    call.fail(refusal);
+                }
+            };
+        }
+    }
+
     /** {@code answer} is given the window the click left open, or JSON null when it is the one clicked. */
     private static final class Waiting {
         private final AbstractContainerMenu menu;
         private final Function<JsonElement, JsonObject> answer;
-        private final CallContext call;
-        private final String tool;
+        private final Reply reply;
         private boolean replaced;
 
-        private Waiting(AbstractContainerMenu menu, Function<JsonElement, JsonObject> answer, CallContext call, String tool) {
+        private Waiting(AbstractContainerMenu menu, Function<JsonElement, JsonObject> answer, Reply reply) {
             this.menu = menu;
             this.answer = answer;
-            this.call = call;
-            this.tool = tool;
+            this.reply = reply;
         }
 
         void answer(JsonElement window) {
-            call.ok(tool, answer.apply(window));
+            reply.ok(answer.apply(window));
         }
     }
 
@@ -139,24 +162,25 @@ public final class ServerResync {
      * Clicks, then answers with the DTO read after the server's copy of the window is in, given the
      * window that replaced the one clicked or JSON null. Client thread only.
      */
-    static void click(CallContext call, String tool, AbstractContainerScreen<?> screen, Runnable click,
+    static void click(Reply reply, AbstractContainerScreen<?> screen, Runnable click,
             Function<JsonElement, JsonObject> answer) {
         if (screen instanceof CreativeModeInventoryScreen) {
             click.run();
-            call.ok(tool, answer.apply(JsonNull.INSTANCE));
+            reply.ok(answer.apply(JsonNull.INSTANCE));
             return;
         }
 
         AbstractContainerMenu menu = screen.getMenu();
-        Waiting waiting = new Waiting(menu, answer, call, tool);
+        Waiting waiting = new Waiting(menu, answer, reply);
         WAITING.add(waiting);
         menu.incrementStateId();
         click.run();
 
         CompletableFuture.delayedExecutor(WAIT_MS, TimeUnit.MILLISECONDS).execute(() -> Mc.client().execute(() -> {
             if (WAITING.remove(waiting)) {
-                call.fail(ToolError.TOOL, "CLICK_UNCONFIRMED", "the server did not send the window back within "
-                        + WAIT_MS + "ms of the click, so what the slots hold now is not known", true);
+                reply.fail(new ToolException(ToolError.TOOL, "CLICK_UNCONFIRMED",
+                        "the server did not send the window back within " + WAIT_MS
+                                + "ms of the click, so what the slots hold now is not known", true));
             }
         }));
     }

@@ -16,8 +16,6 @@ import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
@@ -107,23 +105,11 @@ public final class ScreenshotTool implements Tool {
         }
 
         private void deliver(CallContext call, NativeImage source) throws Exception {
-            byte[] png;
-            int outWidth = source.getWidth();
-            int outHeight = source.getHeight();
-            if (outWidth != width || outHeight != height) {
-                try (NativeImage scaled = new NativeImage(width, height, false)) {
-                    source.resizeSubRectTo(0, 0, source.getWidth(), source.getHeight(), scaled);
-                    outWidth = width;
-                    outHeight = height;
-                    png = encode(scaled);
-                }
-            } else {
-                png = encode(source);
-            }
+            Frames.Frame frame = Frames.of(source, width, height);
 
             call.ok("captured a %dx%d frame (%d bytes)%s"
-                            .formatted(outWidth, outHeight, png.length, packWarning()),
-                    null, List.of(Blob.image("image/png", "screenshot.png", outWidth, outHeight, png)));
+                            .formatted(frame.width(), frame.height(), frame.png().length, packWarning()),
+                    null, List.of(Blob.image("image/png", "screenshot.png", frame.width(), frame.height(), frame.png())));
         }
 
         /**
@@ -139,16 +125,6 @@ public final class ScreenshotTool implements Tool {
                     + failure.toLowerCase(Locale.ROOT).replace('_', ' ')
                     + "), so anything the server draws with custom glyphs is a missing-character box"
                     + " in this frame rather than what a player would see";
-        }
-
-        private static byte[] encode(NativeImage image) throws Exception {
-            Path file = Files.createTempFile("botfabric-screenshot", ".png");
-            try {
-                image.writeToFile(file);
-                return Files.readAllBytes(file);
-            } finally {
-                Files.deleteIfExists(file);
-            }
         }
 
         @Override
