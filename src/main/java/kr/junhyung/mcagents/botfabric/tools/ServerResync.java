@@ -33,6 +33,16 @@ import java.util.function.Function;
  * as the window now open, with nothing said about slots of a window that is gone. A window the server
  * closes is answered the same way.
  *
+ * <p>A menu redrawn under the same id is a new window as well. A plugin that turns a page sends the
+ * open-screen packet again with the id the window already has, and the client builds a new menu for
+ * it while the old one keeps the client's prediction of the click. So a wait is keyed by the menu
+ * object it clicked, not by the id, and a window's contents arriving for any other object under the
+ * open id means the window was replaced. That is answered at the end of the client tick rather than
+ * on the packet: the server sends its own full copy of the new window right behind the plugin's, in
+ * the same batch, and the cursor is read after that copy has been applied. A redraw a plugin
+ * schedules a tick later, or a timer's redraw already in flight when the click was made, is still
+ * taken for the click's answer or missed; the packets do not say which click they answer.
+ *
  * <p>Not the creative inventory. Its clicks are not container clicks and the server sends nothing
  * back for them, so it is answered as the client has it, which in creative is what the server takes.
  */
@@ -44,7 +54,19 @@ public final class ServerResync {
     private static final List<Waiting> WAITING = new ArrayList<>();
 
     /** {@code answer} is given the window the click left open, or JSON null when it is the one clicked. */
-    private record Waiting(int containerId, Function<JsonElement, JsonObject> answer, CallContext call, String tool) {
+    private static final class Waiting {
+        private final AbstractContainerMenu menu;
+        private final Function<JsonElement, JsonObject> answer;
+        private final CallContext call;
+        private final String tool;
+        private boolean replaced;
+
+        private Waiting(AbstractContainerMenu menu, Function<JsonElement, JsonObject> answer, CallContext call, String tool) {
+            this.menu = menu;
+            this.answer = answer;
+            this.call = call;
+            this.tool = tool;
+        }
 
         void answer(JsonElement window) {
             call.ok(tool, answer.apply(window));
@@ -55,19 +77,38 @@ public final class ServerResync {
     }
 
     /**
-     * Called on the client thread once the whole of a window has been applied. The window clicked
-     * answers its own click; any other window that is now the open one answers a click on the window
-     * it replaced.
+     * Called on the client thread once the whole of a window has been applied. The menu clicked
+     * answers its own click; any other menu now open under that id replaced the one clicked, and is
+     * answered once the tick's packets are all in.
      */
     public static void arrived(int containerId) {
         AbstractContainerMenu open = Mc.client().player == null ? null : Mc.client().player.containerMenu;
+        if (open == null || open.containerId != containerId) {
+            return;
+        }
         for (Waiting waiting : List.copyOf(WAITING)) {
-            if (waiting.containerId() == containerId) {
+            if (waiting.menu == open) {
                 WAITING.remove(waiting);
                 waiting.answer(JsonNull.INSTANCE);
-            } else if (open != null && open.containerId == containerId && Windows.open() != null) {
+            } else {
+                waiting.replaced = true;
+            }
+        }
+    }
+
+    /**
+     * At the end of every client tick. A click whose window was replaced is answered with the window
+     * open now; with none open it goes on waiting, for the window or for the timeout.
+     */
+    public static void tick() {
+        AbstractContainerScreen<?> screen = Windows.open();
+        if (screen == null) {
+            return;
+        }
+        for (Waiting waiting : List.copyOf(WAITING)) {
+            if (waiting.replaced) {
                 WAITING.remove(waiting);
-                waiting.answer(replacedBy(Windows.open()));
+                waiting.answer(replacedBy(screen));
             }
         }
     }
@@ -75,7 +116,7 @@ public final class ServerResync {
     /** Called on the client thread when the server closes a window. */
     public static void closed(int containerId) {
         for (Waiting waiting : List.copyOf(WAITING)) {
-            if (waiting.containerId() == containerId) {
+            if (waiting.menu.containerId == containerId) {
                 WAITING.remove(waiting);
                 JsonObject window = new JsonObject();
                 window.addProperty("closed", true);
@@ -107,7 +148,7 @@ public final class ServerResync {
         }
 
         AbstractContainerMenu menu = screen.getMenu();
-        Waiting waiting = new Waiting(menu.containerId, answer, call, tool);
+        Waiting waiting = new Waiting(menu, answer, call, tool);
         WAITING.add(waiting);
         menu.incrementStateId();
         click.run();

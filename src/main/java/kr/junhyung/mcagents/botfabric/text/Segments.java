@@ -71,9 +71,9 @@ public final class Segments {
         return segments;
     }
 
-    /* The private use area, where a resource pack puts the glyphs it draws a HUD out of. */
-    private static final java.util.regex.Pattern GLYPHS =
-            java.util.regex.Pattern.compile("[\\uE000-\\uF8FF]|[\\uDB80-\\uDBBF][\\uDC00-\\uDFFF]");
+    /* The private use areas, where a resource pack puts the glyphs it draws a HUD out of. */
+    static final java.util.regex.Pattern GLYPHS =
+            java.util.regex.Pattern.compile("[\\uE000-\\uF8FF\\x{F0000}-\\x{10FFFF}]");
 
     /**
      * The readable pieces joined, for the {@code text} field a DTO keeps beside its segments. A
@@ -92,15 +92,6 @@ public final class Segments {
             said.append(element.getAsJsonObject().get("text").getAsString());
         }
         return said.toString();
-    }
-
-    /**
-     * The text as it reads with the glyphs taken out and nothing between the pieces: what a pattern
-     * written against a feed line is matched with inside the bot, where the font labels mcp-server
-     * puts in front of each piece do not exist.
-     */
-    public static String readable(Component component) {
-        return GLYPHS.matcher(component.getString()).replaceAll("");
     }
 
     /**
@@ -139,7 +130,7 @@ public final class Segments {
         return segment;
     }
 
-    private static String fontOf(Style style) {
+    static String fontOf(Style style) {
         FontDescription font = style.getFont();
         if (font instanceof FontDescription.Resource resource && !resource.equals(FontDescription.DEFAULT)) {
             return resource.id().toString();

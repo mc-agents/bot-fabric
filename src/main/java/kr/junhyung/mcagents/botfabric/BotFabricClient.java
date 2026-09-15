@@ -75,6 +75,7 @@ import kr.junhyung.mcagents.botfabric.tools.SelectBundleItemTool;
 import kr.junhyung.mcagents.botfabric.tools.SelectTradeTool;
 import kr.junhyung.mcagents.botfabric.tools.SetBeaconEffectsTool;
 import kr.junhyung.mcagents.botfabric.tools.SendChatTool;
+import kr.junhyung.mcagents.botfabric.tools.ServerResync;
 import kr.junhyung.mcagents.botfabric.tools.SetDialogInputTool;
 import kr.junhyung.mcagents.botfabric.tools.SwitchServerTool;
 import kr.junhyung.mcagents.botfabric.tools.TypeTextTool;
@@ -234,6 +235,7 @@ public class BotFabricClient implements ClientModInitializer {
             events.flush();
             scheduler.tick();
             UseKey.tick();
+            ServerResync.tick();
         });
         ClientPlayConnectionEvents.JOIN.register((handler, sender, minecraft) -> session.report("ready"));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, minecraft) -> {

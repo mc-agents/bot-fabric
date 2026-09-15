@@ -12,6 +12,7 @@ import kr.junhyung.mcagents.botfabric.nav.Steering;
 import kr.junhyung.mcagents.botfabric.rpc.CallContext;
 import kr.junhyung.mcagents.botfabric.task.Task;
 import kr.junhyung.mcagents.botfabric.task.TaskScheduler;
+import kr.junhyung.mcagents.botfabric.text.Readings;
 import kr.junhyung.mcagents.botfabric.tool.Args;
 import kr.junhyung.mcagents.botfabric.tool.CatalogHashes;
 import kr.junhyung.mcagents.botfabric.tool.Tool;
@@ -102,8 +103,9 @@ public final class PressInputTool implements Tool {
             }
         }
 
-        boolean matches(String kind, String text) {
-            return feed.equals(kind) && pattern.matcher(text).find();
+        /** The reading that matched, or null: the line is matched every way a caller can have read it. */
+        String matched(String kind, Readings line) {
+            return feed.equals(kind) ? line.matched(pattern) : null;
         }
 
         JsonObject describe(String matched) {
@@ -126,7 +128,7 @@ public final class PressInputTool implements Tool {
         private final Watch after;
         private final Watch until;
         private final int timeoutMs;
-        private final BiConsumer<String, String> listener = this::saw;
+        private final BiConsumer<String, Readings> listener = this::saw;
 
         private Phase phase;
         private int ticksLeft;
@@ -178,16 +180,22 @@ public final class PressInputTool implements Tool {
         }
 
         /** A feed line, on the client thread, before the tick that reads the keys. */
-        private void saw(String kind, String text) {
-            if (phase == Phase.WAITING && after.matches(kind, text)) {
-                waitedMs = elapsedMs();
-                afterMatched = text;
-                press();
-            } else if (until != null && (phase == Phase.DOWN || phase == Phase.UP) && until.matches(kind, text)) {
-                untilMatched = text;
-                stopped = "until";
-                letGo();
-                phase = Phase.DONE;
+        private void saw(String kind, Readings line) {
+            if (phase == Phase.WAITING) {
+                String matched = after.matched(kind, line);
+                if (matched != null) {
+                    waitedMs = elapsedMs();
+                    afterMatched = matched;
+                    press();
+                }
+            } else if (until != null && (phase == Phase.DOWN || phase == Phase.UP)) {
+                String matched = until.matched(kind, line);
+                if (matched != null) {
+                    untilMatched = matched;
+                    stopped = "until";
+                    letGo();
+                    phase = Phase.DONE;
+                }
             }
         }
 

@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.rpc.CallContext;
 import kr.junhyung.mcagents.botfabric.task.Task;
 import kr.junhyung.mcagents.botfabric.task.TaskScheduler;
+import kr.junhyung.mcagents.botfabric.text.Readings;
 import kr.junhyung.mcagents.botfabric.tool.Args;
 import kr.junhyung.mcagents.botfabric.tool.CatalogHashes;
 import kr.junhyung.mcagents.botfabric.tool.Tool;
@@ -25,7 +26,9 @@ import java.util.regex.PatternSyntaxException;
  *
  * <p>The pattern is a JavaScript regular expression in the catalogue because the first bot to
  * implement this was in TypeScript. Java's {@link Pattern} accepts the subset a caller writes for
- * a window title, and {@code find} is the semantics of {@code RegExp.test}.
+ * a window title, and {@code find} is the semantics of {@code RegExp.test}. It is matched against
+ * the title every way a caller can have read it -- as read-window shows it, font labels and all,
+ * and as plain text -- through {@link Readings}.
  */
 public final class WaitForWindowTool implements Tool {
 
@@ -76,8 +79,8 @@ public final class WaitForWindowTool implements Tool {
      * {@code find} and not {@code matches}: that is the semantics of JavaScript's RegExp.test, so an
      * unanchored pattern matches part of a title on both kinds of bot.
      */
-    static boolean titleMatches(String title, Pattern pattern) {
-        return pattern == null || pattern.matcher(title).find();
+    static boolean titleMatches(Readings title, Pattern pattern) {
+        return pattern == null || title.matches(pattern);
     }
 
     private static final class WaitTask implements Task {
@@ -101,7 +104,7 @@ public final class WaitForWindowTool implements Tool {
         public boolean tick(CallContext call) {
             AbstractContainerScreen<?> container = Windows.open();
 
-            if (container != null && titleMatches(container.getTitle().getString(), pattern)) {
+            if (container != null && titleMatches(Readings.of(container.getTitle()), pattern)) {
                 answer(call, Windows.describe(container));
                 return true;
             }

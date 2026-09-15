@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import kr.junhyung.mcagents.botfabric.rpc.RpcClient;
 import kr.junhyung.mcagents.botfabric.text.Dialogs;
+import kr.junhyung.mcagents.botfabric.text.Readings;
 import kr.junhyung.mcagents.botfabric.text.Segments;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.DisplayInfo;
@@ -126,7 +127,7 @@ public final class EventPump {
         a bite in it for the press that is waiting on one.
         */
         if (kind.equals("actionBar") || kind.equals("title") || kind.equals("effect")) {
-            FeedWatch.saw(kind, kind.equals("effect") ? message.getString() : Segments.readable(message));
+            FeedWatch.saw(kind, kind.equals("effect") ? Readings.plain(message.getString()) : Readings.of(message));
         }
         /* Before the line is built: a muted effect feed is muted because it is a firehose. */
         if (!folder.wants(kind)) {

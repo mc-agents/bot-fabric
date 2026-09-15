@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import kr.junhyung.mcagents.botfabric.text.Readings;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import org.junit.jupiter.api.Test;
 
@@ -18,20 +19,20 @@ class WaitForWindowToolTest {
 
     @Test
     void anUnanchoredPatternMatchesPartOfTheTitle() {
-        assertTrue(WaitForWindowTool.titleMatches("Shop: weapons", WaitForWindowTool.compile("Shop")));
-        assertFalse(WaitForWindowTool.titleMatches("Shop: weapons", WaitForWindowTool.compile("Bank")));
+        assertTrue(WaitForWindowTool.titleMatches(Readings.plain("Shop: weapons"), WaitForWindowTool.compile("Shop")));
+        assertFalse(WaitForWindowTool.titleMatches(Readings.plain("Shop: weapons"), WaitForWindowTool.compile("Bank")));
     }
 
     @Test
     void anAnchoredPatternOnlyMatchesTheWholeTitle() {
-        assertTrue(WaitForWindowTool.titleMatches("Shop", WaitForWindowTool.compile("^Shop$")));
-        assertFalse(WaitForWindowTool.titleMatches("Shop: weapons", WaitForWindowTool.compile("^Shop$")));
+        assertTrue(WaitForWindowTool.titleMatches(Readings.plain("Shop"), WaitForWindowTool.compile("^Shop$")));
+        assertFalse(WaitForWindowTool.titleMatches(Readings.plain("Shop: weapons"), WaitForWindowTool.compile("^Shop$")));
     }
 
     /** No pattern means any window, which is the catalogue's default and not "a window named null". */
     @Test
     void noPatternMatchesAnything() {
-        assertTrue(WaitForWindowTool.titleMatches("anything at all", WaitForWindowTool.compile(null)));
+        assertTrue(WaitForWindowTool.titleMatches(Readings.plain("anything at all"), WaitForWindowTool.compile(null)));
     }
 
     /**
