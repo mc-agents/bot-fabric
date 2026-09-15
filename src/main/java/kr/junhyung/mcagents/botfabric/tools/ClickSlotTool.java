@@ -137,10 +137,13 @@ public final class ClickSlotTool implements Tool {
             From the slot the server sent back rather than from the inventory. The window it sends does
             not hold the offhand, so a swap the server refused left the client's own offhand holding
             the item it had predicted: the slot kept its item, and the offhand said it had it too.
-            A slot that still holds what it held did not swap.
+            A swap that happened put what the offhand held into the slot. A slot holding anything else
+            did not swap: a plugin that refuses the click and redraws the slot with another item read
+            as a swap when the test was only whether the slot had changed.
             */
             ItemStack slotAfter = menu.getSlot(slot).getItem();
-            swapped.add("after", Windows.held(ItemStack.matches(slotAfter, before) ? swappedBefore : before));
+            boolean swappedIn = ItemStack.matches(slotAfter, swappedBefore) && !ItemStack.matches(slotAfter, before);
+            swapped.add("after", Windows.held(swappedIn ? before : swappedBefore));
             data.add("swapped", swapped);
         }
 
