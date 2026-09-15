@@ -1,10 +1,12 @@
 package kr.junhyung.mcagents.botfabric.mixin;
 
 import kr.junhyung.mcagents.botfabric.event.Feeds;
+import kr.junhyung.mcagents.botfabric.tools.ServerResync;
 import kr.junhyung.mcagents.botfabric.tools.StatsAnswers;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.game.ClientboundAwardStatsPacket;
+import net.minecraft.network.protocol.game.ClientboundContainerSetContentPacket;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
@@ -34,6 +36,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(ClientPacketListener.class)
 public class ClientPacketListenerMixin {
+
+    /* A click waiting for the server's copy of its window: the tail is where the slots hold it. */
+    @Inject(method = "handleContainerContent", at = @At("TAIL"))
+    private void botfabric$windowContents(ClientboundContainerSetContentPacket packet, CallbackInfo info) {
+        ServerResync.arrived(packet.containerId());
+    }
 
     @Inject(method = "setActionBarText", at = @At("TAIL"))
     private void botfabric$actionBar(ClientboundSetActionBarTextPacket packet, CallbackInfo info) {

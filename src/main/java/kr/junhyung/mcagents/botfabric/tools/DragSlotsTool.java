@@ -6,8 +6,10 @@ import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
 import kr.junhyung.mcagents.botfabric.Mc;
+import kr.junhyung.mcagents.botfabric.rpc.CallContext;
 import kr.junhyung.mcagents.botfabric.tool.Args;
-import kr.junhyung.mcagents.botfabric.tool.ReadTool;
+import kr.junhyung.mcagents.botfabric.tool.CatalogHashes;
+import kr.junhyung.mcagents.botfabric.tool.Tool;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -26,8 +28,11 @@ import net.minecraft.world.item.ItemStack;
  * <p>All of it goes in one call, the way the client sends it on mouse release. Any other click
  * between the start and the end resets the drag on the server, so splitting it across calls would
  * let an agent's read-window in the middle quietly throw the whole thing away.
+ *
+ * <p>Answered once the server has sent the window back after the end, through {@link ServerResync}:
+ * only the end moves the state id, so the start and the slots go through as the client sends them.
  */
-public final class DragSlotsTool extends ReadTool {
+public final class DragSlotsTool implements Tool {
 
     /** Outside the window, where a drag starts and ends. The number is the protocol's. */
     private static final int OUTSIDE = -999;
@@ -36,12 +41,22 @@ public final class DragSlotsTool extends ReadTool {
     private static final int ADD_SLOT = 1;
     private static final int END = 2;
 
-    public DragSlotsTool() {
-        super("drag-slots");
+    @Override
+    public String name() {
+        return "drag-slots";
     }
 
     @Override
-    protected JsonObject read(JsonObject args) {
+    public String argsHash() {
+        return CatalogHashes.of(name());
+    }
+
+    @Override
+    public void invoke(CallContext call, JsonObject args) {
+        Mc.immediate(call, () -> drag(call, args));
+    }
+
+    private void drag(CallContext call, JsonObject args) {
         String button = new Args(args).string("button");
         int kind = switch (button) {
             case "left" -> 0;
@@ -65,8 +80,13 @@ public final class DragSlotsTool extends ReadTool {
         for (int slot : slots) {
             Windows.click(container, slot, AbstractContainerMenu.getQuickcraftMask(ADD_SLOT, kind), ContainerInput.QUICK_CRAFT);
         }
-        Windows.click(container, OUTSIDE, AbstractContainerMenu.getQuickcraftMask(END, kind), ContainerInput.QUICK_CRAFT);
+        ServerResync.click(call, name(), container,
+                () -> Windows.click(container, OUTSIDE, AbstractContainerMenu.getQuickcraftMask(END, kind), ContainerInput.QUICK_CRAFT),
+                () -> dragged(menu, slots, before, carried, button));
+    }
 
+    private static JsonObject dragged(AbstractContainerMenu menu, List<Integer> slots, List<ItemStack> before,
+            ItemStack carried, String button) {
         JsonArray results = new JsonArray();
         for (int i = 0; i < slots.size(); i++) {
             JsonObject entry = new JsonObject();

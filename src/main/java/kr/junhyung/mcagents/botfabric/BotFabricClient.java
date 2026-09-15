@@ -230,7 +230,7 @@ public class BotFabricClient implements ClientModInitializer {
                     || Mc.screen() instanceof PauseScreen) {
                 Mc.setScreen(null);
             }
-            session.noticeDeath();
+            session.noticeWorld();
             events.flush();
             scheduler.tick();
             UseKey.tick();
