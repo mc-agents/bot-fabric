@@ -324,3 +324,7 @@ unchanged on 26.2, which is the number that decides what following a version cos
 
 `docs/notes.md` has the rest of what was measured, including the things that were guessed wrong
 first.
+
+## License
+
+Apache License 2.0; see [LICENSE](LICENSE).
