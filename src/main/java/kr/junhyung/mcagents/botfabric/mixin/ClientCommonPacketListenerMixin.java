@@ -2,17 +2,21 @@ package kr.junhyung.mcagents.botfabric.mixin;
 
 import kr.junhyung.mcagents.botfabric.event.Feeds;
 import kr.junhyung.mcagents.botfabric.event.ResourcePacks;
+import kr.junhyung.mcagents.botfabric.session.Connections;
 import kr.junhyung.mcagents.botfabric.session.Disconnects;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.dialog.DialogConnectionAccess;
 import net.minecraft.client.multiplayer.ClientCommonPacketListenerImpl;
 import net.minecraft.core.Holder;
+import net.minecraft.network.Connection;
 import net.minecraft.network.DisconnectionDetails;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundClearDialogPacket;
 import net.minecraft.network.protocol.common.ServerboundResourcePackPacket;
 import net.minecraft.server.dialog.Dialog;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -36,9 +40,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * <p>And the reason a connection ended. The DISCONNECT event is the socket closing and carries
  * none; what the server said arrives here, on the client thread, once the client has torn the
  * world down over it -- and this is the one listener both configuration and play go through.
+ *
+ * <p>Which is also why the connection itself is taken from here: a leave asked for in
+ * configuration, behind a dialog or the reconfiguration screen, has no level and no connect screen
+ * to close it through.
  */
 @Mixin(ClientCommonPacketListenerImpl.class)
 public class ClientCommonPacketListenerMixin {
+
+    @Shadow
+    @Final
+    protected Connection connection;
+
+    @Inject(method = "<init>", at = @At("TAIL"))
+    private void botfabric$made(CallbackInfo info) {
+        Connections.noticed(connection);
+    }
 
     /** The one path the server's packet and a click event both take to put a dialog on screen. */
     @Inject(method = "showDialog(Lnet/minecraft/core/Holder;Lnet/minecraft/client/gui/screens/dialog/DialogConnectionAccess;Lnet/minecraft/client/gui/screens/Screen;)V",

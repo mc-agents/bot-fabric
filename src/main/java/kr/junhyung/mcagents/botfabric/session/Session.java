@@ -64,9 +64,9 @@ public final class Session {
     }
 
     /**
-     * Leave the world, or the join still in progress, the way the pause screen's Disconnect and
-     * the connect screen's Cancel do: the connection is closed with the reason first, and the
-     * client's side torn down after. Client thread only.
+     * Leave the world, or the join still in progress, the way the pause screen's Disconnect, the
+     * connect screen's Cancel and the reconfiguration screen's Disconnect do: the connection is
+     * closed with the reason first, and the client's side torn down after. Client thread only.
      *
      * <p>{@code Minecraft.disconnect} alone tears down the client's side and leaves the socket
      * open. The server kept the bot as a ghost until its keep-alive gave up, some thirty seconds
@@ -85,6 +85,7 @@ public final class Session {
     public void leave(String reason) {
         Minecraft minecraft = Mc.client();
         Component why = Component.literal(reason);
+        Connection configuring = Connections.current();
         if (minecraft.level != null) {
             minecraft.level.disconnect(why);
         } else if (Mc.screen() instanceof ConnectScreen connecting) {
@@ -95,6 +96,12 @@ public final class Session {
             if (connection != null) {
                 connection.disconnect(why);
             }
+        } else if (configuring != null) {
+            /*
+            Configuration with the connect screen covered by a dialog, or a proxy's reconfiguration,
+            whose screen keeps the connection to itself: the listener's copy is the one to close.
+            */
+            configuring.disconnect(why);
         } else {
             return;
         }
