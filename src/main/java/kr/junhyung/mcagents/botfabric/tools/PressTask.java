@@ -79,11 +79,7 @@ final class PressTask implements Task {
     @Override
     public void start(CallContext call) {
         Mc.requirePlayer();
-        /* The keybinding handler does not run under a screen: the keys go to the screen instead. */
-        if (Mc.screen() != null) {
-            throw ToolException.refused("WINDOW_OPEN",
-                    "a window is open, and keys go to it rather than to the game; close-window first.");
-        }
+        requireGameTakesKeys();
         long sequenceMs = ((long) repeat * holdTicks + (long) (repeat - 1) * intervalTicks) * TICK_MS;
         if (sequenceMs > timeoutMs) {
             throw ToolException.refused("TOO_LONG", repeat + " presses of " + ticks(holdTicks) + ", "
@@ -96,6 +92,17 @@ final class PressTask implements Task {
         phase = after == null ? Phase.UP : Phase.WAITING;
         ticksLeft = 1;
         FeedWatch.listen(listener);
+    }
+
+    /**
+     * The keybinding handler does not run under a screen: the keys go to the screen instead. A
+     * useItem step of run-inputs is refused on the same rule, since the use it makes is the key's.
+     */
+    static void requireGameTakesKeys() {
+        if (Mc.screen() != null) {
+            throw ToolException.refused("WINDOW_OPEN",
+                    "a window is open, and keys go to it rather than to the game; close-window first.");
+        }
     }
 
     /** A feed line, on the client thread, before the tick that reads the keys. */

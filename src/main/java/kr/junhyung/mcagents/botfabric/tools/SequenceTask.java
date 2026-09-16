@@ -14,6 +14,8 @@ import kr.junhyung.mcagents.botfabric.rpc.CallContext;
 import kr.junhyung.mcagents.botfabric.task.Task;
 import kr.junhyung.mcagents.botfabric.text.Readings;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.InteractionHand;
 
 /**
  * The steps of run-inputs, run tick by tick inside the bot.
@@ -21,10 +23,11 @@ import kr.junhyung.mcagents.botfabric.tool.ToolException;
  * <p>Tick 0 is the tick the first step starts on, and a step starts on the very tick the step
  * before it ended, so what the answer reports as the ticks between two inputs is what the game
  * saw between them. A press ends the tick after it is let go, so that the game reads it up before
- * the next input; a click ends when the server has sent the window back, the way click-slot
- * answers; a command ends on its own tick; a wait ends that many ticks after it started; a waitFor
- * ends at the end of the tick its line arrived on. Steps that end on the tick they start run on
- * inside one tick.
+ * the next input, and a useItem is let go of holdTicks after it began and ends the tick after, the
+ * same way; a click ends when the server has sent the window back, the way click-slot answers; a
+ * command ends on its own tick; a wait ends that many ticks after it started; a waitFor ends at
+ * the end of the tick its line arrived on. Steps that end on the tick they start run on inside one
+ * tick.
  *
  * <p>The first step the game refuses stops the sequence, and the call is still answered: what the
  * steps before it did is why a caller batched them. The whole of it is bounded by timeoutMs, and
@@ -157,6 +160,7 @@ final class SequenceTask implements Task {
         return switch (step) {
             case Step.Press press -> new PressRunner(press, tick, timeoutMs);
             case Step.Click click -> new ClickRunner(click, tick);
+            case Step.UseItem use -> new UseItemRunner(use, tick);
             case Step.Command command -> new CommandRunner(command, tick);
             case Step.Wait wait -> new WaitRunner(wait, tick);
             case Step.WaitFor waitFor -> new WaitForRunner(waitFor, tick, from);
@@ -280,6 +284,64 @@ final class SequenceTask implements Task {
         @Override
         void cleanup(CallContext call) {
             task.cleanup(call);
+        }
+    }
+
+    /**
+     * use-held-item's own use, begun on the tick the step starts, let go of holdTicks later and
+     * over the tick after that, so the game reads the release before the next step the way it reads
+     * a press's key coming up. A hold the timeout cuts or a cancel ends is let go of on the way out,
+     * as use-held-item's cleanup lets go of one.
+     */
+    private final class UseItemRunner extends Runner {
+        private String item;
+        private boolean released;
+
+        UseItemRunner(Step.UseItem use, int startedTick) {
+            super(use, startedTick);
+        }
+
+        @Override
+        void start(CallContext call) {
+            LocalPlayer player = Mc.requirePlayer();
+            PressTask.requireGameTakesKeys();
+            InteractionHand hand = ((Step.UseItem) step).offhand() ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+            item = UseHeldItemTool.describe(player.getItemInHand(hand));
+            UseKey.hold();
+            Mc.client().gameMode.useItem(player, hand);
+        }
+
+        @Override
+        boolean step(CallContext call) {
+            LocalPlayer player = Mc.requirePlayer();
+            int releaseTick = startedTick + ((Step.UseItem) step).holdTicks();
+            if (tick == releaseTick) {
+                release(player);
+            }
+            return tick > releaseTick;
+        }
+
+        @Override
+        JsonElement dto() {
+            Step.UseItem use = (Step.UseItem) step;
+            JsonObject used = new JsonObject();
+            used.addProperty("hand", use.hand());
+            used.addProperty("item", item);
+            used.addProperty("holdTicks", use.holdTicks());
+            return used;
+        }
+
+        @Override
+        void cleanup(CallContext call) {
+            release(Mc.client().player);
+        }
+
+        private void release(LocalPlayer player) {
+            if (released) {
+                return;
+            }
+            released = true;
+            UseHeldItemTool.release(player);
         }
     }
 

@@ -2,13 +2,17 @@ package kr.junhyung.mcagents.botfabric.session;
 
 import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.Mc;
+import kr.junhyung.mcagents.botfabric.mixin.ConnectScreenAccessor;
 import kr.junhyung.mcagents.botfabric.mixin.MinecraftAccessor;
 import kr.junhyung.mcagents.botfabric.rpc.RpcClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.User;
+import net.minecraft.client.gui.screens.ConnectScreen;
+import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 
 import java.util.Objects;
@@ -57,6 +61,44 @@ public final class Session {
         MinecraftAccessor accessor = (MinecraftAccessor) Minecraft.getInstance();
         accessor.botfabric$setUser(user);
         accessor.botfabric$setProfileFuture(CompletableFuture.completedFuture(null));
+    }
+
+    /**
+     * Leave the world, or the join still in progress, the way the pause screen's Disconnect and
+     * the connect screen's Cancel do: the connection is closed with the reason first, and the
+     * client's side torn down after. Client thread only.
+     *
+     * <p>{@code Minecraft.disconnect} alone tears down the client's side and leaves the socket
+     * open. The server kept the bot as a ghost until its keep-alive gave up, some thirty seconds
+     * on, or until the same name joined again and was kicked for it -- and the DISCONNECT event
+     * ran at that moment, on the netty thread, over whatever session was in the world by then.
+     * With the channel closed here the server logs the leave at once, and the event's cleanup runs
+     * inside the leave.
+     *
+     * <p>Nothing reports "disconnected" for a leave the bot asked for, and nothing has to hold it
+     * back: the listener's onDisconnect, where the mixin reads the reason, is only reached from
+     * {@code handleDisconnection}, which in a world the game mode's tick calls and during a join
+     * the connect screen's tick calls -- and {@code Minecraft.disconnect} discards the game mode
+     * and replaces the screen before another tick can run. That is the client's own quit, which
+     * shows the title screen and never "Connection Lost".
+     */
+    public void leave(String reason) {
+        Minecraft minecraft = Mc.client();
+        Component why = Component.literal(reason);
+        if (minecraft.level != null) {
+            minecraft.level.disconnect(why);
+        } else if (Mc.screen() instanceof ConnectScreen connecting) {
+            ConnectScreenAccessor screen = (ConnectScreenAccessor) connecting;
+            /* The connect thread reads this before it goes on, so a connect still resolving stops too. */
+            screen.mcagents$setAborted(true);
+            Connection connection = screen.mcagents$connection();
+            if (connection != null) {
+                connection.disconnect(why);
+            }
+        } else {
+            return;
+        }
+        minecraft.disconnect(new TitleScreen(), false);
     }
 
     /**

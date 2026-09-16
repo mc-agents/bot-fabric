@@ -8,16 +8,16 @@ import kr.junhyung.mcagents.botfabric.tool.Args;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 
 /**
- * One step of run-inputs, as parsed: exactly one of press, click, command, wait or waitFor.
+ * One step of run-inputs, as parsed: exactly one of press, click, useItem, command, wait or waitFor.
  *
- * <p>A step object arrives with all twelve fields, the ones outside its kind filled in with their
- * defaults, so which kind it is comes from which of the five naming fields is not null and never
+ * <p>A step object arrives with all thirteen fields, the ones outside its kind filled in with their
+ * defaults, so which kind it is comes from which of the six naming fields is not null and never
  * from the rest. {@link #asked()} is the step in the words the answer names it by, so a step the
  * game refused or the timeout cut can still be said; the other kind of bot spells it the same.
  */
-sealed interface Step permits Step.Press, Step.Click, Step.Command, Step.Wait, Step.WaitFor {
+sealed interface Step permits Step.Press, Step.Click, Step.UseItem, Step.Command, Step.Wait, Step.WaitFor {
 
-    List<String> KINDS = List.of("press", "click", "command", "wait", "waitFor");
+    List<String> KINDS = List.of("press", "click", "useItem", "command", "wait", "waitFor");
 
     String kind();
 
@@ -77,6 +77,36 @@ sealed interface Step permits Step.Press, Step.Click, Step.Command, Step.Wait, S
             args.addProperty("mode", mode);
             args.addProperty("hotbar", hotbar);
             return args;
+        }
+    }
+
+    /**
+     * The item in a hand used, as use-held-item uses it: the item's own right-click, whatever the
+     * crosshair is on, where {@code press: use} is the player's click and goes to the block or
+     * entity there first.
+     */
+    record UseItem(boolean offhand, int holdTicks) implements Step {
+
+        @Override
+        public String kind() {
+            return "useItem";
+        }
+
+        @Override
+        public String asked() {
+            String used = "use item in " + (offhand ? "off-hand" : "main hand");
+            return holdTicks > 1 ? used + " for " + holdTicks + " ticks" : used;
+        }
+
+        /** In use for holdTicks, then let go of and one tick for the game to read the release, as a press. */
+        @Override
+        public int atLeastTicks() {
+            return holdTicks + 1;
+        }
+
+        /** The hand as the wire and the record spell it. */
+        String hand() {
+            return offhand ? "off-hand" : "main-hand";
         }
     }
 
@@ -155,7 +185,7 @@ sealed interface Step permits Step.Press, Step.Click, Step.Command, Step.Wait, S
         List<String> named = KINDS.stream().filter(kind -> given(step, kind)).toList();
         if (named.isEmpty()) {
             throw ToolException.refused("BAD_STEP",
-                    "step " + number + " names none of press, click, command, wait or waitFor");
+                    "step " + number + " names none of press, click, useItem, command, wait or waitFor");
         }
         if (named.size() > 1) {
             throw ToolException.refused("BAD_STEP",
@@ -176,6 +206,15 @@ sealed interface Step permits Step.Press, Step.Click, Step.Command, Step.Wait, S
                 case "click" -> new Click(args.integer("click", 0), args.string("button", "left"),
                         args.bool("shift", false), args.string("mode", "click"),
                         given(step, "hotbar") ? args.integer("hotbar", 0) : null);
+                case "useItem" -> {
+                    String hand = args.string("useItem");
+                    boolean offhand = switch (hand) {
+                        case "main-hand" -> false;
+                        case "off-hand" -> true;
+                        default -> throw ToolException.badArgs("unknown hand " + hand);
+                    };
+                    yield new UseItem(offhand, args.integer("holdTicks", 1));
+                }
                 case "command" -> {
                     String text = args.string("command");
                     yield new Command(text.startsWith("/") ? text : "/" + text);

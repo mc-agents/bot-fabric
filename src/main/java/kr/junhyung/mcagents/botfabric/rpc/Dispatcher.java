@@ -169,9 +169,7 @@ public final class Dispatcher {
             return;
         }
         Mc.immediate(call, () -> {
-            if (Mc.client().level != null) {
-                Mc.client().disconnect(new net.minecraft.client.gui.screens.TitleScreen(), false);
-            }
+            session.leave(reason);
             /* Told to leave, so nothing went wrong: linked and in no world is idle. */
             session.report("idle", reason, null);
             call.ok("left the game: " + reason);

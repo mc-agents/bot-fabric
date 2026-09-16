@@ -48,7 +48,7 @@ public final class UseHeldItemTool implements Tool {
     }
 
     /** The stack in the words bot-mineflayer uses: what a server called it, else what it is. */
-    private static String describe(ItemStack stack) {
+    static String describe(ItemStack stack) {
         if (stack.isEmpty()) {
             return "an empty hand";
         }
@@ -57,6 +57,18 @@ public final class UseHeldItemTool implements Tool {
                 : BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
 
         return name + " x" + stack.getCount();
+    }
+
+    /**
+     * Through the game mode, which tells the server. The player's own release only stops the
+     * client's copy of the use, and the server went on drawing a bow nobody would ever let go.
+     * A useItem step of run-inputs lets go the same way.
+     */
+    static void release(LocalPlayer player) {
+        UseKey.release();
+        if (player != null && player.isUsingItem()) {
+            Mc.client().gameMode.releaseUsingItem(player);
+        }
     }
 
     private static final class UseTask implements Task {
@@ -118,17 +130,6 @@ public final class UseHeldItemTool implements Tool {
         public void cleanup(CallContext call) {
             if (holdMs > 0) {
                 release(Mc.client().player);
-            }
-        }
-
-        /**
-         * Through the game mode, which tells the server. The player's own release only stops the
-         * client's copy of the use, and the server went on drawing a bow nobody would ever let go.
-         */
-        private static void release(LocalPlayer player) {
-            UseKey.release();
-            if (player != null && player.isUsingItem()) {
-                Mc.client().gameMode.releaseUsingItem(player);
             }
         }
 

@@ -104,6 +104,12 @@ public final class ConnectTask implements Task {
         }
         if (System.currentTimeMillis() - startedAt > spawnTimeoutMs) {
             String stage = session.loggedIn() ? "spawn" : "login";
+            /*
+            The connection is not left to finish on its own. A server that let the bot out of
+            configuration a minute late spawned it, and the join event said "ready" to a call
+            already answered with this failure; the other kind of bot leaves here too.
+            */
+            session.leave(stage + " timeout");
             session.report("disconnected", stage + " timeout", null);
             call.fail(ToolError.TIMEOUT, failureCode(),
                     "no " + stage + " within " + spawnTimeoutMs + "ms of connecting to " + host + ":" + port, true);
