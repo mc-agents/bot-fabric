@@ -1,11 +1,12 @@
 package kr.junhyung.mcagents.botfabric.tools;
 
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.Mc;
 import kr.junhyung.mcagents.botfabric.tool.ReadTool;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 /** What block is at a position, for checking that a build or a command did what it said. */
@@ -18,7 +19,18 @@ public final class GetBlockInfoTool extends ReadTool {
     @Override
     protected JsonObject read(JsonObject args) {
         BlockPos at = Positions.of(args);
-        BlockState state = Mc.requirePlayerEvenIfDead().level().getBlockState(at);
+        Level level = Mc.requirePlayerEvenIfDead().level();
+
+        JsonObject data = new JsonObject();
+        data.add("position", Positions.json(at));
+
+        /* An unloaded chunk reads as void_air, which would pass for a block that is gone. */
+        if (!level.isLoaded(at)) {
+            data.add("block", JsonNull.INSTANCE);
+            return data;
+        }
+
+        BlockState state = level.getBlockState(at);
 
         JsonObject block = new JsonObject();
         block.addProperty("name", BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath());
@@ -26,8 +38,6 @@ public final class GetBlockInfoTool extends ReadTool {
         block.addProperty("type", BuiltInRegistries.BLOCK.getId(state.getBlock()));
         block.add("position", Positions.json(at));
 
-        JsonObject data = new JsonObject();
-        data.add("position", Positions.json(at));
         data.add("block", block);
         return data;
     }

@@ -40,7 +40,13 @@ public final class ConnectTask implements Task {
         startedAt = System.currentTimeMillis();
         session.rememberTarget(host, port, username);
         session.applyUsername(username);
+        session.joinStarted();
         session.report("connecting");
+    }
+
+    @Override
+    public void cleanup(CallContext call) {
+        session.joinEnded();
     }
 
     /*
@@ -81,7 +87,14 @@ public final class ConnectTask implements Task {
             String said = ((DisconnectedScreenAccessor) disconnected).mcagents$details().reason().getString();
             String reason = said.isBlank() || said.equals(title) ? title : title + ": " + said;
             session.report("disconnected", reason, reason);
-            call.fail(ToolError.TOOL, "REFUSED", "the server refused the connection: " + reason, true);
+            /*
+            The server prefixes the stage's own summary. Past the login it says the bot logged in,
+            and "refused the connection" after that contradicted it.
+            */
+            String how = session.loggedIn()
+                    ? "the connection ended before the spawn: "
+                    : "the server refused the connection: ";
+            call.fail(ToolError.TOOL, failureCode(), how + reason, true);
             return true;
         }
         if (minecraft.player != null && minecraft.level != null && minecraft.getConnection() != null) {
@@ -90,11 +103,22 @@ public final class ConnectTask implements Task {
             return true;
         }
         if (System.currentTimeMillis() - startedAt > spawnTimeoutMs) {
-            session.report("disconnected", "spawn timeout", null);
-            call.fail(ToolError.TIMEOUT, "SPAWN_TIMEOUT",
-                    "no spawn within " + spawnTimeoutMs + "ms of connecting to " + host + ":" + port, true);
+            String stage = session.loggedIn() ? "spawn" : "login";
+            session.report("disconnected", stage + " timeout", null);
+            call.fail(ToolError.TIMEOUT, failureCode(),
+                    "no " + stage + " within " + spawnTimeoutMs + "ms of connecting to " + host + ":" + port, true);
             return true;
         }
         return false;
+    }
+
+    /**
+     * Which half of the join failed, in the protocol's words. Past the login it is the world's
+     * doing -- a plugin holding the player in configuration, a kick before the spawn -- and the
+     * server reads any other code as the login being refused. It used to send one code for both,
+     * so a plugin that never let the bot spawn read as a whitelist.
+     */
+    private String failureCode() {
+        return session.loggedIn() ? "JOIN_FAILED_SPAWN" : "JOIN_FAILED_LOGIN";
     }
 }

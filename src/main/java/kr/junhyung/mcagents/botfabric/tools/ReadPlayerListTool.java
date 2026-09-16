@@ -9,7 +9,18 @@ import kr.junhyung.mcagents.botfabric.tool.ReadTool;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 
-/** Who else is online, from the tab list the server keeps up to date. */
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+/**
+ * Who else is online, from the tab list the server keeps up to date.
+ *
+ * <p>Only the players the server lists, in name order, which is what the other kind of bot
+ * answers. An entry the server sends unlisted is one it keeps for an NPC's skin or for a player
+ * on another backend, not somebody in the tab list; and the client holds them in a hash map,
+ * so unsorted they came back in a different order every call.
+ */
 public final class ReadPlayerListTool extends ReadTool {
 
     public ReadPlayerListTool() {
@@ -20,8 +31,11 @@ public final class ReadPlayerListTool extends ReadTool {
     protected JsonObject read(JsonObject args) {
         String self = Mc.requirePlayerEvenIfDead().getGameProfile().name();
 
+        List<PlayerInfo> listed = new ArrayList<>(Mc.requireConnection().getListedOnlinePlayers());
+        listed.sort(Comparator.comparing(info -> info.getProfile().name()));
+
         JsonArray players = new JsonArray();
-        for (PlayerInfo info : Mc.requireConnection().getOnlinePlayers()) {
+        for (PlayerInfo info : listed) {
             JsonObject player = new JsonObject();
             String name = info.getProfile().name();
             player.addProperty("name", name);

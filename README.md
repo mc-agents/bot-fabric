@@ -137,7 +137,7 @@ afterwards.
 | `MinecraftAccessor` | makes `Minecraft.user` writable so `connect` can change the username, and resets `profileFuture` so the game profile follows it |
 | `FramerateLimitTrackerMixin` | returns the frame budget from `getFramerateLimit` |
 | `ClientPacketListenerMixin` | the five feeds with no Fabric API event: action bar, title, subtitle, sound, particle |
-| `ClientCommonPacketListenerMixin` | the client's own verdict on a resource pack, read off the packet it sends; and the two dialog packets, which are common ones |
+| `ClientCommonPacketListenerMixin` | the client's own verdict on a resource pack, read off the packet it sends; the two dialog packets, which are common ones; and the reason a connection ended, which the DISCONNECT event fires without |
 | `BossHealthOverlayAccessor` | the boss bars the HUD is holding, which it keeps privately and only draws |
 | `KeyboardInputMixin` | lets a task hold a key down, which is how walking and jumping are done |
 | `FishingHookAccessor` | the hook's own synced "biting" flag, rather than guessing from a splash |

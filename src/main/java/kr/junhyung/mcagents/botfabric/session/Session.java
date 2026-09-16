@@ -28,6 +28,12 @@ public final class Session {
     private String reported;
     private long reportedAt;
 
+    /** Whether a connect is between its start and its answer. Client thread only. */
+    private boolean joining;
+
+    /** Whether the server accepted the login of the connect in flight. Set from the network thread. */
+    private volatile boolean loggedIn;
+
     public Session(RpcClient client) {
         this.client = client;
     }
@@ -51,6 +57,52 @@ public final class Session {
         MinecraftAccessor accessor = (MinecraftAccessor) Minecraft.getInstance();
         accessor.botfabric$setUser(user);
         accessor.botfabric$setProfileFuture(CompletableFuture.completedFuture(null));
+    }
+
+    /**
+     * A connect is under way. It answers a refused connection itself, with the join's own error
+     * code, so a disconnect noticed meanwhile is left to it rather than reported twice.
+     */
+    public void joinStarted() {
+        joining = true;
+        loggedIn = false;
+    }
+
+    public void joinEnded() {
+        joining = false;
+    }
+
+    /** The server accepted the login and the connection moved on to configuration. */
+    public void noticeLogin() {
+        loggedIn = true;
+    }
+
+    /**
+     * Whether the connect in flight got past the login. What fails after it is the world's doing
+     * -- a plugin holding the player in configuration, a kick before spawn -- and what fails
+     * before it is the server's: whitelist, ban, a full server, the wrong version.
+     */
+    public boolean loggedIn() {
+        return loggedIn;
+    }
+
+    /**
+     * The connection ended with the server's word on why, from the client's own disconnect path.
+     *
+     * <p>The DISCONNECT event fires first, from the socket closing, and carries no reason; without
+     * this a kick was reported bare, and every wait in flight died with "the bot disconnected" and
+     * no way to tell a plugin that kicked the bot from a backend that went away behind the proxy.
+     */
+    public void noticeDisconnect(String reason) {
+        if (joining) {
+            return;
+        }
+        /*
+        A plugin may kick with an empty message. Sent blank, the status printed a reason of nothing
+        and the waits died with one; the other kind of bot says "disconnected" when it has no words.
+        */
+        String said = reason.isBlank() ? "disconnected" : reason;
+        report("disconnected", said, said);
     }
 
     /**

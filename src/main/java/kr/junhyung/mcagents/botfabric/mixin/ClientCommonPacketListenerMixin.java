@@ -2,10 +2,12 @@ package kr.junhyung.mcagents.botfabric.mixin;
 
 import kr.junhyung.mcagents.botfabric.event.Feeds;
 import kr.junhyung.mcagents.botfabric.event.ResourcePacks;
+import kr.junhyung.mcagents.botfabric.session.Disconnects;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.dialog.DialogConnectionAccess;
 import net.minecraft.client.multiplayer.ClientCommonPacketListenerImpl;
 import net.minecraft.core.Holder;
+import net.minecraft.network.DisconnectionDetails;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundClearDialogPacket;
 import net.minecraft.network.protocol.common.ServerboundResourcePackPacket;
@@ -30,6 +32,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * reader that waited for a screen would be asking whether the client happened to have drawn it yet.
  * It used to be fed from the server's packet alone, and a dialog a chat line's click opened was on
  * screen with nothing in the feed to say so -- an agent reads whatever dialog is up, whoever opened it.
+ *
+ * <p>And the reason a connection ended. The DISCONNECT event is the socket closing and carries
+ * none; what the server said arrives here, on the client thread, once the client has torn the
+ * world down over it -- and this is the one listener both configuration and play go through.
  */
 @Mixin(ClientCommonPacketListenerImpl.class)
 public class ClientCommonPacketListenerMixin {
@@ -52,5 +58,10 @@ public class ClientCommonPacketListenerMixin {
         if (packet instanceof ServerboundResourcePackPacket pack) {
             ResourcePacks.reported(pack.action().name());
         }
+    }
+
+    @Inject(method = "onDisconnect", at = @At("TAIL"))
+    private void botfabric$disconnected(DisconnectionDetails details, CallbackInfo info) {
+        Disconnects.noticed(details.reason().getString());
     }
 }

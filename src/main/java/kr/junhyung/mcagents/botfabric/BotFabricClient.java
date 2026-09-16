@@ -2,6 +2,7 @@ package kr.junhyung.mcagents.botfabric;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientConfigurationConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.screens.AccessibilityOnboardingScreen;
@@ -14,6 +15,7 @@ import kr.junhyung.mcagents.botfabric.rpc.Dispatcher;
 import kr.junhyung.mcagents.botfabric.render.FrameBudget;
 import kr.junhyung.mcagents.botfabric.render.RenderOptions;
 import kr.junhyung.mcagents.botfabric.rpc.RpcClient;
+import kr.junhyung.mcagents.botfabric.session.Disconnects;
 import kr.junhyung.mcagents.botfabric.session.Session;
 import kr.junhyung.mcagents.botfabric.task.TaskScheduler;
 import kr.junhyung.mcagents.botfabric.tool.ToolRegistry;
@@ -241,13 +243,19 @@ public class BotFabricClient implements ClientModInitializer {
             UseKey.tick();
             ServerResync.tick();
         });
+        /* The configuration listener exists from the moment the server accepts the login. */
+        ClientConfigurationConnectionEvents.INIT.register((handler, minecraft) -> session.noticeLogin());
         ClientPlayConnectionEvents.JOIN.register((handler, sender, minecraft) -> session.report("ready"));
+        /*
+        The reason is not here: this fires from the socket closing, before the client has read what
+        the server said, so the status goes out from the disconnect path itself, with the reason.
+        */
         ClientPlayConnectionEvents.DISCONNECT.register((handler, minecraft) -> {
             /* A crouch or a held key from the last world would otherwise be the first thing done in the next. */
             Steering.reset();
             events.closeAll();
-            session.report("disconnected");
         });
+        Disconnects.listen(session);
 
         LOGGER.info("{} tools ready; dialling {}:{} as {} once the client has loaded",
                 tools.all().size(), config.host(), config.port(), config.botName());
