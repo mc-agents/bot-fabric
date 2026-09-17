@@ -189,7 +189,8 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new ReadAdvancementsTool());
         tools.register(new ReadStatsTool(scheduler));
 
-        Dispatcher dispatcher = new Dispatcher(tools, scheduler, session, config.botName(), events);
+        Dispatcher dispatcher = new Dispatcher(tools, scheduler, session, config.botName(), config.linkToken(),
+                events);
 
         events.register();
         boolean[] configured = new boolean[1];

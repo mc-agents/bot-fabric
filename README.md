@@ -255,6 +255,28 @@ CI publishes one image per Minecraft version, tagged the way the operator compos
 `<version>-<timestamp>.g<sha>-mc<minecraft>` and a moving `latest-mc<minecraft>`. The version
 matrix comes from `./gradlew printVersions`, so adding a version does not touch the workflow.
 
+A push that publishes also tags the commit `v<mod version>` and makes a GitHub Release from it,
+with the mod jar attached and the commits since the previous tag as its notes. A push that changed
+nothing the image is built from -- a README, the dev harness, CI itself -- publishes nothing and
+tags nothing, so `:<version>` keeps pointing at the build that was smoked; `hack/check-version.sh`
+decides which.
+
+### The catalogue
+
+The hashes a bot reports in `hello` are mcp-server's, copied into `CatalogHashes.java` by
+`hack/sync-catalog.py --from <mcp-server tag>` along with the tag they came from. CI regenerates
+the file from that tag and fails on any difference, so the file cannot drift from the release it
+names. Move to a new catalogue with:
+
+```sh
+hack/sync-catalog.py --from v0.61.3
+```
+
+The path form, `hack/sync-catalog.py [../mcp-server/catalog/catalog.json]`, reads a checkout
+instead and pins whatever `git describe` calls it, which passes CI only when the checkout sits on
+a tag. A tool the server rejects at the handshake is logged at WARN with the reason, together
+with the tag this bot was generated from.
+
 ### Configuration
 
 | variable | default | |
@@ -262,6 +284,7 @@ matrix comes from `./gradlew printVersions`, so adding a version does not touch 
 | `MCP_SERVER_HOST` | `127.0.0.1` | where `mcp-server` listens |
 | `MCP_SERVER_PORT` | `8765` | |
 | `BOT_NAME` | `fabric_bot` | reported in `hello` |
+| `BOT_LINK_TOKEN` | | sent as `hello.linkToken` when set. The operator sets it from the MCPServer's link Secret; a server with a token refuses a hello without it |
 | `RECONNECT_MIN_MS` | `2000` | |
 | `BOT_RPC_ENABLED` | `true` | `false` runs a plain client |
 | `HEALTH_PORT` | `8080` | `/healthz` while the process is up, `/readyz` once it has linked |
@@ -310,9 +333,9 @@ unchanged on 26.2, which is the number that decides what following a version cos
   reported as unreachable with the reason, not waited out. Baritone would mean an unofficial fork
   for 26.x, and an unofficial fork of a thing the game does not owe anything to is how the bot
   this one replaced ended up where it did.
-- **No authentication on the RPC link.** The port is meant to be reachable only by `mcp-server`,
-  and a NetworkPolicy is what keeps it that way; per-bot tokens would hand the operator a secret
-  to rotate for a port that never leaves the cluster.
+- **The RPC link is a shared secret, not a per-bot identity.** `BOT_LINK_TOKEN` proves a bot was
+  deployed for the mcp-server it dials, and a NetworkPolicy keeps the port to that namespace; a
+  bot that has the token can call itself any name.
 - **Offline mode only**, and commands that need a chat signature cannot be run from a dialog
   button, as above.
 - **`com.mojang:jtracy` has no arm64 build.** It is the profiler the client loads lazily, so on

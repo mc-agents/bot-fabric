@@ -8,8 +8,8 @@ on:
 
 env:
   REGISTRY: junhyung.cloud
-  IMAGE: junhyung.cloud/library/bot-fabric
-  ASSETS_IMAGE: junhyung.cloud/library/mc-assets
+  IMAGE: junhyung.cloud/mc-agents/bot-fabric
+  ASSETS_IMAGE: junhyung.cloud/mc-agents/mc-assets
 
 jobs:
   check:
@@ -21,6 +21,9 @@ jobs:
       loader: ${{ steps.versions.outputs.loader }}
       api: ${{ steps.versions.outputs.api }}
       modVersion: ${{ steps.versions.outputs.modVersion }}
+      # Whether anything the image is built from changed. A docs-only push leaves the image, the
+      # tag and the release alone, so :<version> keeps pointing at the build that was smoked.
+      shipped: ${{ steps.version.outputs.shipped }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -46,6 +49,7 @@ jobs:
       # and the first push to a branch names the all-zero sha, so only the consistency half runs
       # in either case.
       - name: version is consistent and was raised
+        id: version
         env:
           FORCED: ${{ github.event.forced }}
           BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
@@ -57,12 +61,21 @@ jobs:
             bash hack/check-version.sh "$BASE"
           fi
 
-      # CatalogHashes.java is generated from mcp-server's catalogue and committed, so that a
-      # catalogue change shows up as a diff to review rather than as tools quietly going dark at
-      # the next handshake. This only checks that it is internally consistent; whether it matches
-      # the current catalogue is what the diff in a pull request is for.
-      - name: the catalogue hashes are readable
-        run: python3 -c "import re,pathlib; t=pathlib.Path('src/main/java/kr/junhyung/mcagents/botfabric/tool/CatalogHashes.java').read_text(); n=len(re.findall(r'entry\(\"', t)); print(n, 'tools'); raise SystemExit(0 if n > 0 else 1)"
+      # CatalogHashes.java is generated from the catalogue of one mcp-server release and names
+      # it, so a catalogue change shows up as a diff to review rather than as tools quietly going
+      # dark at the next handshake. Regenerating from that release is what makes the name true:
+      # a file edited by hand, or generated from a working tree that never shipped, differs here.
+      - name: the catalogue hashes match the mcp-server release they name
+        run: |
+          set -eu
+          file=src/main/java/kr/junhyung/mcagents/botfabric/tool/CatalogHashes.java
+          source=$(sed -n 's/.*CATALOG_SOURCE = "\(.*\)";/\1/p' "$file")
+          if ! printf '%s' "$source" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "$file was generated from '$source', not from an mcp-server release; run hack/sync-catalog.py --from <tag>" >&2
+            exit 1
+          fi
+          python3 hack/sync-catalog.py --from "$source"
+          git diff --exit-code -- "$file"
 
       - run: ./gradlew build
 
@@ -91,6 +104,7 @@ jobs:
   # server, draws a frame and presses a dialog button. Slow enough to keep out of `check`.
   smoke:
     needs: check
+    if: needs.check.outputs.shipped != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -159,16 +173,21 @@ jobs:
 
   publish:
     needs: [check, smoke]
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && needs.check.outputs.shipped != 'false'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # write for the git tag and the release, and in this job alone.
+      contents: write
       # Harbor takes a robot account, so the credentials are repository secrets. cosign
       # stays keyless: the certificate comes from Fulcio and no key lives here either.
       # Lets cosign fetch a short-lived certificate from Fulcio, so no key lives in the repo.
       id-token: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          # The release notes are the commits since the previous tag, which a shallow clone
+          # has neither of.
+          fetch-depth: 0
 
       - uses: actions/download-artifact@v4
         with:
@@ -250,6 +269,41 @@ jobs:
 
       - name: sign assets image
         run: cosign sign --yes "${{ env.ASSETS_IMAGE }}@${{ steps.assets.outputs.digest }}"
+
+      # The image tags map the version to a build; the git tag maps it to a commit, which is what
+      # a bisect or a diff between two releases needs, and the release carries the jar for a
+      # client run by hand. A tag that is already there is left where it is: a re-run of this job
+      # must not say a different commit shipped the version. The notes are the commits since the
+      # previous tag, because what GitHub would generate is pull request titles and this
+      # repository is pushed to.
+      - name: tag and release
+        env:
+          VERSION: ${{ needs.check.outputs.modVersion }}
+          RELEASE_TAG: ${{ steps.tag.outputs.release }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          if ! git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" > /dev/null; then
+            git tag "v$VERSION" "$GITHUB_SHA"
+            git push origin "v$VERSION"
+          fi
+          if gh release view "v$VERSION" > /dev/null 2>&1; then
+            exit 0
+          fi
+          previous=$(git describe --tags --abbrev=0 --match 'v*' "$GITHUB_SHA^" 2>/dev/null \
+            || git tag --list 'v*' --sort=-v:refname | grep -v "^v$VERSION\$" | head -1)
+          catalog=src/main/java/kr/junhyung/mcagents/botfabric/tool/CatalogHashes.java
+          {
+            if [ -n "$previous" ]; then
+              git log "$previous..$GITHUB_SHA" --format='- %s'
+            else
+              echo "- first tagged release; the ones before it were images only"
+            fi
+            echo
+            echo "Image \`$IMAGE:$RELEASE_TAG\`, catalogue $(sed -n 's/.*CATALOG_VERSION = "\(.*\)";/\1/p' "$catalog")" \
+              "from mcp-server $(sed -n 's/.*CATALOG_SOURCE = "\(.*\)";/\1/p' "$catalog")."
+          } > notes.md
+          gh release create "v$VERSION" --title "v$VERSION" --notes-file notes.md dist/*.jar
 
       - run: |
           {

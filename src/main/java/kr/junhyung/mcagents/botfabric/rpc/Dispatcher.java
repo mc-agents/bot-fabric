@@ -1,6 +1,7 @@
 package kr.junhyung.mcagents.botfabric.rpc;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import kr.junhyung.mcagents.botfabric.BotFabricClient;
 import kr.junhyung.mcagents.botfabric.Mc;
@@ -30,6 +31,7 @@ public final class Dispatcher {
     private final TaskScheduler scheduler;
     private final Session session;
     private final String botName;
+    private final String linkToken;
     private final EventPump events;
 
     private final Map<String, CallContext> inFlight = new ConcurrentHashMap<>();
@@ -44,11 +46,12 @@ public final class Dispatcher {
     private volatile RpcClient client;
 
     public Dispatcher(ToolRegistry tools, TaskScheduler scheduler, Session session, String botName,
-            EventPump events) {
+            String linkToken, EventPump events) {
         this.tools = tools;
         this.scheduler = scheduler;
         this.session = session;
         this.botName = botName;
+        this.linkToken = linkToken;
         this.events = events;
     }
 
@@ -74,6 +77,14 @@ public final class Dispatcher {
         hello.addProperty("catalogVersion", CatalogHashes.CATALOG_VERSION);
         hello.add("capabilities", capabilities);
         hello.add("features", Json.array("blob"));
+        /*
+        Only when one was given. A server that has no token configured ignores the field, and one
+        that has answers a hello without it with an UNAUTHORIZED fault, so sending an empty string
+        would turn "not configured" into "wrong".
+        */
+        if (!linkToken.isEmpty()) {
+            hello.addProperty("linkToken", linkToken);
+        }
         return hello;
     }
 
@@ -111,6 +122,23 @@ public final class Dispatcher {
 
     private void onHelloOk(JsonObject message) {
         LOGGER.info("linked as session {}", Json.string(message, "sessionId", "?"));
+        /*
+        A tool the server turned down is one an agent will be told is disabled, and the reason
+        is only ever said here: the catalogue this bot was generated from no longer matches the
+        one the server holds, and hack/sync-catalog.py is the fix.
+        */
+        JsonElement rejected = message.get("rejectedTools");
+        if (rejected != null && rejected.isJsonArray() && !rejected.getAsJsonArray().isEmpty()) {
+            JsonArray rejections = rejected.getAsJsonArray();
+            for (JsonElement element : rejections) {
+                JsonObject rejection = element.getAsJsonObject();
+                LOGGER.warn("server rejected {}: {}", Json.string(rejection, "tool", "?"),
+                        Json.string(rejection, "reason", "no reason given"));
+            }
+            LOGGER.warn("{} tool(s) rejected at handshake: generated from mcp-server {} (catalogue {}),"
+                    + " which is not what the server holds", rejections.size(),
+                    CatalogHashes.CATALOG_SOURCE, CatalogHashes.CATALOG_VERSION);
+        }
         events.configure(message);
         /* "idle" is the protocol's word for linked and in no world. */
         session.report("idle");

@@ -11,12 +11,18 @@ import kr.junhyung.mcagents.botfabric.render.RenderOptions;
  * own loopback and waited there. {@code BOT_RPC_ENABLED} is not in the contract: it is this mod's,
  * for running the client by hand with nothing driving it.
  */
-public record BotConfig(String host, int port, String botName, long reconnectDelayMs, boolean enabled,
-                        int healthPort, int renderDistance, int frameRateLimit) {
+public record BotConfig(String host, int port, String botName, String linkToken, long reconnectDelayMs,
+                        boolean enabled, int healthPort, int renderDistance, int frameRateLimit) {
     public static BotConfig fromEnvironment() {
         String host = env("MCP_SERVER_HOST", "127.0.0.1");
         int port = Integer.parseInt(env("MCP_SERVER_PORT", "8765"));
         String name = env("BOT_NAME", "fabric_bot");
+        /*
+        Proof to mcp-server that this is a bot it deployed, and not another pod in the namespace
+        that reached the link port. Empty means the server is not asking, and the field stays out
+        of hello; it is never logged.
+        */
+        String linkToken = env("BOT_LINK_TOKEN", "");
         long delay = Long.parseLong(env("RECONNECT_MIN_MS", "2000"));
         boolean enabled = !"false".equalsIgnoreCase(env("BOT_RPC_ENABLED", "true"));
         int healthPort = Integer.parseInt(env("HEALTH_PORT", "8080"));
@@ -27,7 +33,7 @@ public record BotConfig(String host, int port, String botName, long reconnectDel
         */
         int distance = RenderOptions.distanceFrom(env("BOT_RENDER_DISTANCE", ""));
         int frames = Integer.parseInt(env("BOT_FRAME_RATE_LIMIT", "1"));
-        return new BotConfig(host, port, name, delay, enabled, healthPort, distance, frames);
+        return new BotConfig(host, port, name, linkToken, delay, enabled, healthPort, distance, frames);
     }
 
     private static String env(String key, String fallback) {
