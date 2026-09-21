@@ -128,13 +128,9 @@ public final class CatalogHashes {
     private CatalogHashes() {
     }
 
+    /** The catalogue's hash for a tool, or null when the catalogue holds no entry for it. */
     public static String of(String tool) {
-        String hash = BY_TOOL.get(tool);
-        if (hash == null) {
-            throw new IllegalStateException(
-                    tool + " has no hash in the catalogue; run hack/sync-catalog.py");
-        }
-        return hash;
+        return BY_TOOL.get(tool);
     }
 }
 ''' % (catalog["catalogVersion"], source, catalog["catalogVersion"], source, entries))

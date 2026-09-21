@@ -277,6 +277,11 @@ instead and pins whatever `git describe` calls it, which passes CI only when the
 a tag. A tool the server rejects at the handshake is logged at WARN with the reason, together
 with the tag this bot was generated from.
 
+A tool written before the catalogue that names it has no hash to report, so it is left out of the
+`hello` capabilities and named once at boot in a WARN. The handshake goes ahead with the rest: the
+one tool that is not ready costs itself and nothing else, which is what running
+`hack/sync-catalog.py` afterwards fixes.
+
 ### Configuration
 
 | variable | default | |

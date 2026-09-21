@@ -18,6 +18,7 @@ import kr.junhyung.mcagents.botfabric.rpc.RpcClient;
 import kr.junhyung.mcagents.botfabric.session.Disconnects;
 import kr.junhyung.mcagents.botfabric.session.Session;
 import kr.junhyung.mcagents.botfabric.task.TaskScheduler;
+import kr.junhyung.mcagents.botfabric.tool.CatalogHashes;
 import kr.junhyung.mcagents.botfabric.tool.ToolRegistry;
 import kr.junhyung.mcagents.botfabric.tools.ActivateBlockTool;
 import kr.junhyung.mcagents.botfabric.tools.AttackEntityTool;
@@ -59,6 +60,7 @@ import kr.junhyung.mcagents.botfabric.tools.ReadBookTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadContainerOptionsTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadBossBarsTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadPlayerListTool;
+import kr.junhyung.mcagents.botfabric.tools.ReadRegionTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadScoreboardTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadStatsTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadTradesTool;
@@ -89,6 +91,8 @@ import kr.junhyung.mcagents.botfabric.tools.WaitForWindowTool;
 import kr.junhyung.mcagents.botfabric.tools.WaitTicksTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 public class BotFabricClient implements ClientModInitializer {
     public static final String AGENT_VERSION = versionOf("botfabric");
@@ -133,6 +137,7 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new GetBlockInfoTool());
         tools.register(new GetTargetBlockTool());
         tools.register(new FindBlocksTool());
+        tools.register(new ReadRegionTool());
         tools.register(new ReadBlockEntityTool());
         tools.register(new FindEntityTool());
         tools.register(new ReadDisplaysTool());
@@ -258,6 +263,17 @@ public class BotFabricClient implements ClientModInitializer {
         });
         Disconnects.listen(session);
 
+        /*
+        Here rather than in ToolRegistry.register, which is also how a test builds a registry and
+        would have every test run write this, and rather than at the handshake, which repeats for
+        as long as the process redials. The mistake -- a tool written before the catalogue that
+        names it was synced -- is made once, at the boot this line belongs to.
+        */
+        List<String> unhashed = tools.unhashed();
+        if (!unhashed.isEmpty()) {
+            LOGGER.warn("{} not offered: no hash in catalogue {}; run hack/sync-catalog.py",
+                    unhashed, CatalogHashes.CATALOG_VERSION);
+        }
         LOGGER.info("{} tools ready; dialling {}:{} as {} once the client has loaded",
                 tools.all().size(), config.host(), config.port(), config.botName());
     }

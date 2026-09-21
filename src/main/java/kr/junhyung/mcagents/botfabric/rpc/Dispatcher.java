@@ -60,12 +60,12 @@ public final class Dispatcher {
         protocols.add(1);
 
         JsonArray capabilities = new JsonArray();
-        for (Tool tool : tools.all().values()) {
+        tools.capabilities().forEach((name, argsHash) -> {
             JsonObject capability = new JsonObject();
-            capability.addProperty("tool", tool.name());
-            capability.addProperty("argsHash", tool.argsHash());
+            capability.addProperty("tool", name);
+            capability.addProperty("argsHash", argsHash);
             capabilities.add(capability);
-        }
+        });
 
         JsonObject hello = new JsonObject();
         hello.addProperty("t", "hello");
