@@ -175,6 +175,7 @@ The ones worth naming:
 | `move-to-position` | A* over the client's own collision shapes; the reason is in the refusal |
 | `can-craft`, `get-recipe`, `list-recipes` | the recipe book, and the DTO says so: a client is taught a recipe as the server unlocks it and never told the whole set |
 | `switch-server` | the player object being replaced is the arrival; the proxy's refusals only ever arrive as chat |
+| `read-selection` | WorldEdit's selection, read off the `worldedit:cui` channel the plugin describes one on rather than out of chat; the client announces itself there and answers with the description that comes back |
 
 Text crosses the wire as segments — `{text, font?, color?}` — with the font named, because
 which font a piece of HUD is drawn in is game knowledge and joining it into a display string is

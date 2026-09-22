@@ -20,6 +20,7 @@ import kr.junhyung.mcagents.botfabric.session.Session;
 import kr.junhyung.mcagents.botfabric.task.TaskScheduler;
 import kr.junhyung.mcagents.botfabric.tool.CatalogHashes;
 import kr.junhyung.mcagents.botfabric.tool.ToolRegistry;
+import kr.junhyung.mcagents.botfabric.worldedit.Cui;
 import kr.junhyung.mcagents.botfabric.tools.ActivateBlockTool;
 import kr.junhyung.mcagents.botfabric.tools.AttackEntityTool;
 import kr.junhyung.mcagents.botfabric.tools.CanCraftTool;
@@ -62,6 +63,7 @@ import kr.junhyung.mcagents.botfabric.tools.ReadBossBarsTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadPlayerListTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadRegionTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadScoreboardTool;
+import kr.junhyung.mcagents.botfabric.tools.ReadSelectionTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadStatsTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadTradesTool;
 import kr.junhyung.mcagents.botfabric.tools.SetStanceTool;
@@ -193,11 +195,13 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new RespawnTool(scheduler));
         tools.register(new ReadAdvancementsTool());
         tools.register(new ReadStatsTool(scheduler));
+        tools.register(new ReadSelectionTool(scheduler));
 
         Dispatcher dispatcher = new Dispatcher(tools, scheduler, session, config.botName(), config.linkToken(),
                 events);
 
         events.register();
+        Cui.register();
         boolean[] configured = new boolean[1];
         ClientTickEvents.END_CLIENT_TICK.register(minecraft -> {
             HealthServer.ticked();
@@ -251,7 +255,16 @@ public class BotFabricClient implements ClientModInitializer {
         });
         /* The configuration listener exists from the moment the server accepts the login. */
         ClientConfigurationConnectionEvents.INIT.register((handler, minecraft) -> session.noticeLogin());
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, minecraft) -> session.report("ready"));
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, minecraft) -> {
+            session.report("ready");
+            /*
+            Announcing here and not only when read-selection asks: WorldEdit remembers that this
+            client draws selections and pushes every later change to one, so a corner the bot set
+            has usually arrived before anything asks about it.
+            */
+            Cui.forget();
+            Cui.ask();
+        });
         /*
         The reason is not here: this fires from the socket closing, before the client has read what
         the server said, so the status goes out from the disconnect path itself, with the reason.
@@ -259,6 +272,7 @@ public class BotFabricClient implements ClientModInitializer {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, minecraft) -> {
             /* A crouch or a held key from the last world would otherwise be the first thing done in the next. */
             Steering.reset();
+            Cui.forget();
             events.closeAll();
         });
         Disconnects.listen(session);
