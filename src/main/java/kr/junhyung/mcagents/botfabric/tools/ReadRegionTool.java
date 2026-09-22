@@ -6,9 +6,8 @@ import kr.junhyung.mcagents.botfabric.Mc;
 import kr.junhyung.mcagents.botfabric.tool.Args;
 import kr.junhyung.mcagents.botfabric.tool.ReadTool;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.commands.arguments.blocks.BlockStateParser;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.LinkedHashMap;
@@ -60,7 +59,7 @@ public final class ReadRegionTool extends ReadTool {
         int depth = to.getZ() - from.getZ() + 1;
 
         Level level = Mc.requirePlayerEvenIfDead().level();
-        Map<Block, Integer> palette = new LinkedHashMap<>();
+        Map<BlockState, Integer> palette = new LinkedHashMap<>();
         Runs runs = new Runs();
         /*
         A box wide enough to overflow an int is refused by mcp-server before it reaches a bot, but
@@ -102,17 +101,23 @@ public final class ReadRegionTool extends ReadTool {
                         runs.close();
                         continue;
                     }
-                    runs.add(index(palette, state.getBlock()));
+                    runs.add(index(palette, state));
                 }
             }
         }
         runs.close();
 
         JsonArray names = new JsonArray();
-        for (Block block : palette.keySet()) {
-            /* Vanilla by its bare path, as every other tool words a block; anything else keeps the
-               namespace it came from, which is the only thing telling two "stone" blocks apart. */
-            names.add(Items.plain(BuiltInRegistries.BLOCK.getKey(block).toString()));
+        for (BlockState state : palette.keySet()) {
+            /*
+            The whole state, as /setblock and //set take one: oak_stairs[facing=north,half=bottom,
+            shape=straight,waterlogged=false]. The kind alone lost every orientation, and on a
+            server whose custom blocks are note blocks in disguise it lost which custom block a note
+            block stood for. Vanilla by its bare path, as every other tool words a block; anything
+            else keeps the namespace it came from, which is the only thing telling two "stone"
+            blocks apart.
+            */
+            names.add(Items.plain(BlockStateParser.serialize(state)));
         }
 
         JsonObject size = new JsonObject();
