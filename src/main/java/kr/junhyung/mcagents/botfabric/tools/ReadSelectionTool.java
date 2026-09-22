@@ -56,8 +56,8 @@ public final class ReadSelectionTool implements Tool {
         private final long timeoutMs;
         private final long startedNanos = System.nanoTime();
         private int mark;
-        /** The count seen on the tick before this one, for telling a finished description from a half-arrived one. */
-        private int quiet;
+        /** Whether a description with no corner in it has already been given a further tick to grow one. */
+        private boolean waitedAgain;
 
         private AskTask(long timeoutMs) {
             this.timeoutMs = timeoutMs;
@@ -73,25 +73,28 @@ public final class ReadSelectionTool implements Tool {
             /* Nothing can be asked of a server the client is not in, and the refusal names that rather than the send. */
             Mc.requirePlayerEvenIfDead();
             mark = Cui.described();
-            quiet = mark;
             Cui.ask();
         }
 
         /**
-         * One description is several messages -- the shape, then a corner each -- and they are not
-         * promised to land in one tick. So the answer waits for a tick that adds nothing to the one
-         * before it, and what it reads then is a whole description.
+         * One description is several messages -- the shape, then a corner each -- and the server
+         * sends them together, so the tick that carries the first carries the rest. The corners are
+         * the proof of that: having one is having a whole description, and the answer goes back on
+         * the tick it arrives.
+         *
+         * <p>A description with no corner in it is the ambiguous one, since it reads the same
+         * whether nothing is selected or the corners are a tick behind. That one waits a further
+         * tick, and the wait costs nothing where it happens -- no box is put down over an empty
+         * selection.
          */
         @Override
         public boolean tick(CallContext call) {
-            int described = Cui.described();
-
-            if (described > mark) {
-                if (described == quiet) {
+            if (Cui.described() > mark) {
+                if (!Cui.corners().isEmpty() || waitedAgain) {
                     answer(call, true);
                     return true;
                 }
-                quiet = described;
+                waitedAgain = true;
                 return false;
             }
             if ((System.nanoTime() - startedNanos) / 1_000_000L < timeoutMs) {
