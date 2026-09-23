@@ -41,9 +41,21 @@ asset_index=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["a
 main_class=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["mainClass"])' "$launch")
 
 DISPLAY_NUMBER="${DISPLAY_NUMBER:-99}"
+
+# A restarted container keeps its filesystem, so the lock and socket of the X server that died
+# with the last process are still here -- and Xvfb refuses to start on a display that looks taken
+# ("Server is already active for display 99"). The check below then saw the stale socket, called
+# it success, and the client started against a display with nothing behind it and crashed on
+# GLFW. Two restarts in one afternoon, and the second went round as a crash loop.
+rm -f "/tmp/.X$DISPLAY_NUMBER-lock" "/tmp/.X11-unix/X$DISPLAY_NUMBER"
+
 Xvfb ":$DISPLAY_NUMBER" -screen 0 "$BOT_SCREEN" -nolisten tcp &
+xvfb=$!
 for _ in $(seq 1 50); do
     [ -e "/tmp/.X11-unix/X$DISPLAY_NUMBER" ] && break
+    # Watched as well as waited for: an Xvfb that exited leaves whatever socket it had made, and
+    # waiting for a file it is no longer serving is waiting for the wrong thing.
+    kill -0 "$xvfb" 2>/dev/null || { echo "Xvfb exited before it served display $DISPLAY_NUMBER" >&2; exit 1; }
     sleep 0.2
 done
 [ -e "/tmp/.X11-unix/X$DISPLAY_NUMBER" ] || { echo "Xvfb did not come up" >&2; exit 1; }
