@@ -107,7 +107,7 @@ public final class AttackEntityTool implements Tool {
                     missed = 0;
                     landed++;
                     if (landed == times) {
-                        call.ok("Hit " + label + " " + landed + " time(s).");
+                        call.ok(struck(landed) + ".");
                         return true;
                     }
                     /* The cooldown runs from the swing, so the ticks spent waiting come off it. */
@@ -137,7 +137,7 @@ public final class AttackEntityTool implements Tool {
             if (selector.crosshair()) {
                 /* Not followed: a target picked by where the bot looks is hit only while it is there. */
                 if (!(Mc.client().hitResult instanceof EntityHitResult hit) || hit.getEntity() != target) {
-                    call.ok("Hit " + label + " " + landed + " time(s) out of " + times
+                    call.ok(struck(landed) + " out of " + times
                             + "; it left the crosshair before the rest landed.");
                     return true;
                 }
@@ -155,6 +155,25 @@ public final class AttackEntityTool implements Tool {
             sinceSwing = 0;
             hurtTimeSeen = target instanceof LivingEntity living ? living.hurtTime : 0;
             return false;
+        }
+
+        /**
+         * What was done, said so that it cannot be read as more than it is.
+         *
+         * <p>A hit is only a hit when the server said so, and the server says nothing about a swing
+         * at something that takes no damage: an interaction box, an item frame, an armour stand.
+         * For those the swing is counted when its window passes, which says the swing happened and
+         * nothing about whether it did anything. Calling that a hit is how ten swings that a plugin
+         * silently refused came back as ten hits, and the refusal was looked for everywhere except
+         * in this sentence.
+         */
+        private String struck(int count) {
+            boolean answers = target instanceof LivingEntity && !(target instanceof ArmorStand);
+
+            return answers
+                    ? "Hit " + label + " " + count + " time(s)"
+                    : "Swung at " + label + " " + count + " time(s); it takes no damage, so the server "
+                            + "confirmed nothing -- read the chat for a plugin that refused it";
         }
 
         /**
@@ -179,7 +198,8 @@ public final class AttackEntityTool implements Tool {
             living but is answered the same way: a survival hit on it is an entity event and no
             damage event, so its hurt timer never rises, and it only breaks on a second hit within
             five game ticks, which the gap between swings never produces. The window passing is
-            taken as the hit, which is what counting the swing was before.
+            taken as the swing being over -- which is not the same as it having landed, and the
+            answer says so rather than calling it a hit.
             */
             return sinceSwing >= ACK_TICKS;
         }
@@ -197,7 +217,7 @@ public final class AttackEntityTool implements Tool {
             if (landed == 0) {
                 return "the server registered no hit on " + label + why;
             }
-            return "Hit " + label + " " + landed + " time(s), then the server registered no hit" + why;
+            return struck(landed) + ", then the server registered no hit" + why;
         }
 
         @Override
