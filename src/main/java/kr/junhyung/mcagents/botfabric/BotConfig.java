@@ -16,7 +16,15 @@ public record BotConfig(String host, int port, String botName, String linkToken,
     public static BotConfig fromEnvironment() {
         String host = env("MCP_SERVER_HOST", "127.0.0.1");
         int port = Integer.parseInt(env("MCP_SERVER_PORT", "8765"));
-        String name = env("BOT_NAME", "fabric_bot");
+        /*
+        The hostname before the constant, which is what makes `docker compose up --scale` mean
+        anything: replicas of one service share every environment variable, so a bot that fell back
+        to a constant had every replica announce the same name, the first was admitted and the rest
+        were refused NAME_TAKEN and redialled for ever. A container's hostname is its own -- the
+        container id under compose, the pod name under Kubernetes -- and bot-azalea has read it this
+        way since it was written. docs/bot-protocol.md said both bots did; now both do.
+        */
+        String name = env("BOT_NAME", env("HOSTNAME", "fabric_bot"));
         /*
         Proof to mcp-server that this is a bot it deployed, and not another pod in the namespace
         that reached the link port. Empty means the server is not asking, and the field stays out

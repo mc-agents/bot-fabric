@@ -289,7 +289,7 @@ one tool that is not ready costs itself and nothing else, which is what running
 | --- | --- | --- |
 | `MCP_SERVER_HOST` | `127.0.0.1` | where `mcp-server` listens |
 | `MCP_SERVER_PORT` | `8765` | |
-| `BOT_NAME` | `fabric_bot` | reported in `hello` |
+| `BOT_NAME` | `$HOSTNAME`, then `fabric_bot` | reported in `hello`. Left unset, every replica of a scaled service names itself after its own container |
 | `BOT_LINK_TOKEN` | | sent as `hello.linkToken` when set. The operator sets it from the MCPServer's link Secret; a server with a token refuses a hello without it |
 | `RECONNECT_MIN_MS` | `2000` | |
 | `BOT_RPC_ENABLED` | `true` | `false` runs a plain client |
