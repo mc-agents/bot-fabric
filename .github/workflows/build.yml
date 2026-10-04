@@ -224,24 +224,39 @@ jobs:
       # Mojang's manifest lists org.lwjgl:*:natives-linux for every architecture and ships only
       # x86_64 inside it. fetch-minecraft.py takes LWJGL's own natives-linux-arm64 from Maven
       # Central instead, which is what makes an arm64 bot possible at all.
+      # hack/buildx-push.sh and not docker/build-push-action, for the retry: this image goes over one
+      # home uplink and the push is marginal on it, which is a 499 from the proxy in front of Harbor
+      # partway through the blob uploads and nothing wrong with the build. The script says the rest.
+      #
+      # There is no build cache any more, and that is what actually fixes the push rather than the
+      # retry. `cache-to mode=max` against a registry ref was uploading 408MB beside the 407MB of
+      # image, over the same link, at the same time, and 0.77.0 died with both of them reporting
+      # 499 -- so a retry alone would not have been enough either, because every attempt sends the
+      # cache again. What that bought was nothing much: this is a single stage on a JRE base, so a
+      # `mode=max` cache is close to a second copy of the image, and the only work it saved was one
+      # `apt-get`. A build is now that apt-get twice, once of it emulated. Should that ever be worth
+      # paying for again, `type=gha` is the way and not the registry, and a raw `buildx` needs
+      # crazy-max/ghaction-github-runtime to see the token docker/build-push-action exports for it.
       - id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          provenance: mode=max
-          sbom: true
-          build-args: |
-            MINECRAFT_VERSION=${{ needs.check.outputs.minecraft }}
-            LOADER_VERSION=${{ needs.check.outputs.loader }}
-            FABRIC_API_VERSION=${{ needs.check.outputs.api }}
-          tags: |
-            ${{ env.IMAGE }}:${{ steps.tag.outputs.release }}
-            ${{ env.IMAGE }}:${{ steps.tag.outputs.immutable }}
-            ${{ env.IMAGE }}:${{ steps.tag.outputs.moving }}
-          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache-mc${{ needs.check.outputs.minecraft }}
-          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache-mc${{ needs.check.outputs.minecraft }},mode=max,image-manifest=true,oci-mediatypes=true
+        env:
+          MINECRAFT: ${{ needs.check.outputs.minecraft }}
+          LOADER: ${{ needs.check.outputs.loader }}
+          API: ${{ needs.check.outputs.api }}
+          RELEASE: ${{ steps.tag.outputs.release }}
+          IMMUTABLE: ${{ steps.tag.outputs.immutable }}
+          MOVING: ${{ steps.tag.outputs.moving }}
+        run: |
+          ./hack/buildx-push.sh . \
+            --platform linux/amd64,linux/arm64 \
+            --push \
+            --provenance=mode=max \
+            --sbom=true \
+            --build-arg "MINECRAFT_VERSION=$MINECRAFT" \
+            --build-arg "LOADER_VERSION=$LOADER" \
+            --build-arg "FABRIC_API_VERSION=$API" \
+            --tag "$IMAGE:$RELEASE" \
+            --tag "$IMAGE:$IMMUTABLE" \
+            --tag "$IMAGE:$MOVING"
 
       - name: sign image
         run: cosign sign --yes "${{ env.IMAGE }}@${{ steps.build.outputs.digest }}"
@@ -251,21 +266,24 @@ jobs:
       # keeping one copy of the script is what stops the layout it writes from drifting from the
       # layout the bot reads.
       - id: assets
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile.assets
-          platforms: linux/amd64,linux/arm64
-          push: true
-          provenance: mode=max
-          sbom: true
-          build-args: |
-            MINECRAFT_VERSION=${{ needs.check.outputs.minecraft }}
-            LOADER_VERSION=${{ needs.check.outputs.loader }}
-          tags: |
-            ${{ env.ASSETS_IMAGE }}:${{ steps.tag.outputs.release }}
-            ${{ env.ASSETS_IMAGE }}:${{ steps.tag.outputs.immutable }}
-            ${{ env.ASSETS_IMAGE }}:${{ steps.tag.outputs.moving }}
+        env:
+          MINECRAFT: ${{ needs.check.outputs.minecraft }}
+          LOADER: ${{ needs.check.outputs.loader }}
+          RELEASE: ${{ steps.tag.outputs.release }}
+          IMMUTABLE: ${{ steps.tag.outputs.immutable }}
+          MOVING: ${{ steps.tag.outputs.moving }}
+        run: |
+          ./hack/buildx-push.sh . \
+            --file Dockerfile.assets \
+            --platform linux/amd64,linux/arm64 \
+            --push \
+            --provenance=mode=max \
+            --sbom=true \
+            --build-arg "MINECRAFT_VERSION=$MINECRAFT" \
+            --build-arg "LOADER_VERSION=$LOADER" \
+            --tag "$ASSETS_IMAGE:$RELEASE" \
+            --tag "$ASSETS_IMAGE:$IMMUTABLE" \
+            --tag "$ASSETS_IMAGE:$MOVING"
 
       - name: sign assets image
         run: cosign sign --yes "${{ env.ASSETS_IMAGE }}@${{ steps.assets.outputs.digest }}"
