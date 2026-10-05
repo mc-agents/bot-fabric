@@ -224,19 +224,26 @@ jobs:
       # Mojang's manifest lists org.lwjgl:*:natives-linux for every architecture and ships only
       # x86_64 inside it. fetch-minecraft.py takes LWJGL's own natives-linux-arm64 from Maven
       # Central instead, which is what makes an arm64 bot possible at all.
-      # hack/buildx-push.sh and not docker/build-push-action, for the retry: this image goes over one
-      # home uplink and the push is marginal on it, which is a 499 from the proxy in front of Harbor
-      # partway through the blob uploads and nothing wrong with the build. The script says the rest.
+      # hack/buildx-push.sh and not docker/build-push-action, for the retry: a push of this image
+      # goes over one home uplink and fails there sometimes, with nothing wrong with the build.
       #
-      # There is no build cache any more, and that is what actually fixes the push rather than the
-      # retry. `cache-to mode=max` against a registry ref was uploading 408MB beside the 407MB of
-      # image, over the same link, at the same time, and 0.77.0 died with both of them reporting
-      # 499 -- so a retry alone would not have been enough either, because every attempt sends the
-      # cache again. What that bought was nothing much: this is a single stage on a JRE base, so a
-      # `mode=max` cache is close to a second copy of the image, and the only work it saved was one
-      # `apt-get`. A build is now that apt-get twice, once of it emulated. Should that ever be worth
-      # paying for again, `type=gha` is the way and not the registry, and a raw `buildx` needs
-      # crazy-max/ghaction-github-runtime to see the token docker/build-push-action exports for it.
+      # What kept 0.77.0 and 0.78.0 from publishing was not bandwidth, and this is written down
+      # because two changes here were made on that reading before the registry was asked. Harbor's
+      # own log said it five times for one 85MB layer: "client disconnected during blob PUT ...
+      # unexpected EOF" with 36-74MB copied and http.response.duration between 59.0s and 61.5s
+      # every time. A duration that constant under a size that varies is a clock, not a pipe --
+      # Traefik's respondingTimeouts.readTimeout, which defaults to 60s and caps reading a whole
+      # request body, not idle time. The fix was raising it on the cluster, in homelab-gitops'
+      # infra/rke2/rke2-traefik-config.yaml. Neither the retry nor the cache below would have
+      # helped: every attempt hit the same minute.
+      #
+      # There is no build cache all the same, and that is still right. `cache-to mode=max` against
+      # a registry ref uploaded 408MB beside the 407MB of image, over the same link, at the same
+      # time, and bought one `apt-get`: this is a single stage on a JRE base, so a max-mode cache
+      # is close to a second copy of the image. A build is now that apt-get twice, once of it
+      # emulated. Should it ever be worth paying for again, `type=gha` is the way and not the
+      # registry, and a raw `buildx` needs crazy-max/ghaction-github-runtime to see the token
+      # docker/build-push-action exports for it.
       - id: build
         env:
           MINECRAFT: ${{ needs.check.outputs.minecraft }}
