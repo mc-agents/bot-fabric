@@ -26,6 +26,24 @@ public final class RenderOptions {
      */
     private static final int DEFAULT_DISTANCE = 8;
 
+    /**
+     * The lowest simulation distance the client will take, and the reason the two options below are
+     * not set from the same number.
+     *
+     * <p>Render distance accepts 2..32 and simulation distance 5..32, which is a debug flag's doing:
+     * the client builds the range as {@code DEBUG_ALLOW_LOW_SIM_DISTANCE ? 2 : 5} and the flag is
+     * off in a release. {@code OptionInstance.set} does not clamp what falls outside a range -- it
+     * validates, and on a failure keeps the option's own initial value, which for this one is
+     * twelve. So asking for two gave a bot a simulation distance of twelve: higher than the eight
+     * it would have had by saying nothing, in the one setting it was being lowered to save memory.
+     *
+     * <p>Clamping here rather than refusing the value, because the two are one knob to a caller and
+     * the thing it is for is the chunk meshes, which are render distance's. A bot at 2 loads
+     * twenty-five columns against a hundred and twenty-one at 5, and that is worth keeping even
+     * where the simulation cannot follow it down.
+     */
+    private static final int SIMULATION_MINIMUM = 5;
+
     private RenderOptions() {
     }
 
@@ -38,7 +56,7 @@ public final class RenderOptions {
         options.graphicsPreset().set(GraphicsPreset.FAST);
 
         options.renderDistance().set(renderDistance);
-        options.simulationDistance().set(renderDistance);
+        options.simulationDistance().set(simulationFrom(renderDistance));
         /*
         Mipmaps are for a texture seen at a distance and they make every atlas a third larger
         again. A bot looks at what is in front of it.
@@ -49,6 +67,11 @@ public final class RenderOptions {
         options.ambientOcclusion().set(false);
         options.entityShadows().set(false);
         /* The read-effects feed is built from the packets, so drawing fewer of them reports none. */
+    }
+
+    /** The simulation distance to ask for alongside a render distance. */
+    public static int simulationFrom(int renderDistance) {
+        return Math.max(renderDistance, SIMULATION_MINIMUM);
     }
 
     public static int distanceFrom(String configured) {

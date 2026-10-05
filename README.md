@@ -294,12 +294,14 @@ one tool that is not ready costs itself and nothing else, which is what running
 | `RECONNECT_MIN_MS` | `2000` | |
 | `BOT_RPC_ENABLED` | `true` | `false` runs a plain client |
 | `HEALTH_PORT` | `8080` | `/healthz` while the process is up, `/readyz` once it has linked |
-| `BOT_RENDER_DISTANCE` | `8` | chunks. A fresh client picks 16, which a bot has no use for |
+| `BOT_RENDER_DISTANCE` | `8` | chunks, clamped to 2..32. A fresh client picks 16, which a bot has no use for. Simulation distance follows it down only as far as 5, which is the lowest the client takes |
 | `BOT_FRAME_RATE_LIMIT` | `1` | frames a second while idle; a call in flight raises it to 60 |
 
-The operator has sent the last two since it was written and nothing read either of them, so
-`render.frameRateLimit` in the CRD was documentation until now. What a bot's client draws is
-turned down with them: the FAST preset, no mipmaps, no clouds, no shadows and minimal particles.
+Of the last two the operator used to send only `BOT_FRAME_RATE_LIMIT`; `BOT_RENDER_DISTANCE` had
+no field in the CRD at all, so in a cluster the chunk count -- the largest lever there is on a
+pod's memory -- could only be reached by writing the variable into `spec.env` by hand. Operator
+0.25.0 gives it `render.distance` and sends both. What a bot's client draws is turned down with
+them: the FAST preset, no mipmaps, no clouds, no shadows and minimal particles.
 Only drawing is affected -- the effects feed is built from the packets, so a bot that draws no
 particles still reports them.
 
