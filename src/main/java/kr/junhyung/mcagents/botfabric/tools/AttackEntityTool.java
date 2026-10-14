@@ -12,6 +12,7 @@ import kr.junhyung.mcagents.botfabric.tool.ToolError;
 import kr.junhyung.mcagents.botfabric.tool.ToolException;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
+import net.minecraft.network.protocol.game.ServerboundPunchPacket;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -149,8 +150,15 @@ public final class AttackEntityTool implements Tool {
                 player.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
             }
 
+            /*
+            The punch is what tells the server about the arm now that the swing packet is gone, and
+            it is also the only thing that resets the server's attack strength. The attack packet
+            alone hits with no arm moving for anyone watching, and the server takes every hit after
+            it as fully charged however soon it came.
+            */
             Mc.client().gameMode.attack(player, target);
-            player.swing(InteractionHand.MAIN_HAND);
+            player.swing(InteractionHand.MAIN_HAND, player.getMainHandItem().getAttackAnimation(), false);
+            player.connection.send(ServerboundPunchPacket.INSTANCE);
             swung = true;
             sinceSwing = 0;
             hurtTimeSeen = target instanceof LivingEntity living ? living.hurtTime : 0;

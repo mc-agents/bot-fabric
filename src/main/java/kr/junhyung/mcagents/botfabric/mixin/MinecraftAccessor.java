@@ -1,6 +1,6 @@
 package kr.junhyung.mcagents.botfabric.mixin;
 
-import com.mojang.authlib.yggdrasil.ProfileResult;
+import com.mojang.authlib.services.ProfileResult;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.User;
 import org.spongepowered.asm.mixin.Mixin;

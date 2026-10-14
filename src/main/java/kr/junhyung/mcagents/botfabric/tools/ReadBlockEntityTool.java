@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.entity.SignText;
+import net.minecraft.world.level.block.entity.SignTextSlot;
 
 /**
  * What a block is carrying: sign text, mostly.
@@ -44,8 +45,8 @@ public final class ReadBlockEntityTool extends ReadTool {
         */
         JsonArray faces = new JsonArray();
         if (entity instanceof SignBlockEntity sign) {
-            faces.add(face("front_text", sign.getFrontText()));
-            faces.add(face("back_text", sign.getBackText()));
+            faces.add(face("front_text", sign.getText(SignTextSlot.FRONT)));
+            faces.add(face("back_text", sign.getText(SignTextSlot.BACK)));
         }
         data.add("signFaces", faces);
 

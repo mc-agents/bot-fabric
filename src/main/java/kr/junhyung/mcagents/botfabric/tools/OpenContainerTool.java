@@ -15,6 +15,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -120,9 +122,12 @@ public final class OpenContainerTool implements Tool {
 
             Vec3 middle = Vec3.atCenterOf(at);
             player.lookAt(EntityAnchorArgument.Anchor.EYES, middle);
-            Mc.client().gameMode.useItemOn(player, InteractionHand.MAIN_HAND,
-                    new BlockHitResult(middle, Direction.UP, at, false));
-            player.swing(InteractionHand.MAIN_HAND);
+            ItemStack held = player.getMainHandItem();
+            if (Mc.client().gameMode.useItemOn(player, InteractionHand.MAIN_HAND,
+                    new BlockHitResult(middle, Direction.UP, at, false)) instanceof InteractionResult.Success success
+                    && success.swingSource() == InteractionResult.SwingSource.PREDICTED) {
+                player.swing(InteractionHand.MAIN_HAND, held.getInteractAnimation(), false);
+            }
         }
 
     }

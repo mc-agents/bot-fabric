@@ -11,7 +11,7 @@ services:
     environment:
       EULA: "TRUE"
       TYPE: PAPER
-      VERSION: "${MC_VERSION:-26.1.2}"
+      VERSION: "${MC_VERSION:-26.3}"
       # The bots authenticate offline. Do not run this outside a dev environment.
       ONLINE_MODE: "FALSE"
       MODE: creative

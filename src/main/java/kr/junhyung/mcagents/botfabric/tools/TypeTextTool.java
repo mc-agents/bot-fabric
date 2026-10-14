@@ -21,6 +21,7 @@ import net.minecraft.client.gui.screens.inventory.BookEditScreen;
 import net.minecraft.client.gui.screens.inventory.CommandBlockEditScreen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.world.level.block.entity.SignTextSlot;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -311,7 +312,7 @@ public final class TypeTextTool extends ActionTool {
         round behind a sign wrote on its back, and a sentence saying only "wrote the sign" read the
         same as one that had written the front.
         */
-        String face = editor.mcagents$isFrontText() ? "front" : "back";
+        String face = editor.mcagents$slot() == SignTextSlot.FRONT ? "front" : "back";
 
         return "wrote the " + face + " of the sign, which now reads " + written
                 + ". Closing the editor is what sends it, and it is closed" + refusedNote(refused);

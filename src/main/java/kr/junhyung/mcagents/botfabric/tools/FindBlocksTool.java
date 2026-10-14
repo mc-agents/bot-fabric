@@ -93,7 +93,7 @@ public final class FindBlocksTool extends ReadTool {
         PriorityQueue<BlockPos> kept = new PriorityQueue<>(byDistance.reversed());
         double worst = Double.MAX_VALUE;
 
-        for (BlockPos at : BlockPos.withinManhattan(from, radius, radius, radius)) {
+        for (BlockPos at : BlockPos.withinBoxByManhattanDistance(from, radius, radius, radius)) {
             if (kept.size() >= count && at.distManhattan(from) > worst * SQRT_3) {
                 break;
             }

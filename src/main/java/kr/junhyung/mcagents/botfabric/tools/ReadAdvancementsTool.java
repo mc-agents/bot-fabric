@@ -105,11 +105,11 @@ public final class ReadAdvancementsTool extends ReadTool {
             entry.add("descriptionComponent", JsonNull.INSTANCE);
             entry.add("frame", JsonNull.INSTANCE);
         } else {
-            entry.addProperty("title", display.getTitle().getString());
-            entry.add("titleComponent", Segments.raw(display.getTitle()));
-            entry.addProperty("description", display.getDescription().getString());
-            entry.add("descriptionComponent", Segments.raw(display.getDescription()));
-            entry.addProperty("frame", display.getType().getSerializedName());
+            entry.addProperty("title", display.title().getString());
+            entry.add("titleComponent", Segments.raw(display.title()));
+            entry.addProperty("description", display.description().getString());
+            entry.add("descriptionComponent", Segments.raw(display.description()));
+            entry.addProperty("frame", display.type().getSerializedName());
         }
         entry.addProperty("done", progress.isDone());
         entry.addProperty("criteriaDone", done);

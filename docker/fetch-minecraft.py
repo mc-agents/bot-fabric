@@ -5,7 +5,7 @@ The client jar is not in the image on purpose: it is Mojang's to distribute, not
 runs as an init container against a shared volume, or from the entrypoint when the cache it
 finds is empty.
 
-    fetch-minecraft.py --minecraft 26.1.2 --loader 0.19.5 --cache /mc
+    fetch-minecraft.py --minecraft 26.3 --loader 0.19.5 --cache /mc
 
 Leaves <cache>/versions/<minecraft>/launch.json naming the classpath, the main class and the
 asset index, which is all the entrypoint needs to build a command line.
@@ -30,7 +30,7 @@ OS_NAME = "linux"
 # What the manifest calls the Linux natives, and what LWJGL calls the ones for this machine.
 #
 # Mojang lists org.lwjgl:*:natives-linux for every architecture and ships only x86_64 inside it, so
-# on arm64 the client gets libraries it cannot load and dies in GLFW. LWJGL publishes
+# on arm64 the client gets libraries it cannot load and dies before it has a window. LWJGL publishes
 # natives-linux-arm64 itself on Maven Central, with the same version, and its loader finds them
 # under META-INF/linux/arm64 without anything else having to change.
 #

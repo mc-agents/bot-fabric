@@ -1,6 +1,7 @@
 package kr.junhyung.mcagents.botfabric.mixin;
 
 import net.minecraft.client.gui.screens.inventory.AbstractSignEditScreen;
+import net.minecraft.world.level.block.entity.SignTextSlot;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
@@ -22,6 +23,6 @@ public interface SignEditScreenAccessor {
     int mcagents$line();
 
     /** Which face is being written, which depends on the side the sign was clicked from. */
-    @Accessor("isFrontText")
-    boolean mcagents$isFrontText();
+    @Accessor("slot")
+    SignTextSlot mcagents$slot();
 }

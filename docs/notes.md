@@ -86,6 +86,21 @@ them under `META-INF/linux/arm64` with nothing else changed. The image is multi-
 result; measured on an arm64 machine natively, including a screenshot with the HUD and the hand
 drawn as expected.
 
+26.3 moves to LWJGL 3.4.3 and changes the set under it: GLFW and tinyfd are gone, SDL took over
+the window and input, and shaderc, spvc, vma and vulkan came in with the Vulkan backend. Ten
+artifacts carry `natives-linux` now, and Maven Central has `natives-linux-arm64` for all ten.
+`lwjgl-vulkan` has no Linux natives in the manifest at all -- it loads the system's Vulkan loader
+-- so there is nothing of it to substitute. The client tries OpenGL before Vulkan unless told
+otherwise, which is the path llvmpipe takes. Measured on 26.3 on an arm64 machine natively: the
+substituted natives load and the client runs on llvmpipe's OpenGL 4.5 core profile.
+
+It did not until the image switched SDL to EGL. The OpenGL backend asks for an sRGB-capable
+framebuffer, Xvfb's GLX lists no visual with one, and the client gave up with "Couldn't find
+matching GLX visual" before trying Vulkan, which found no surface either. Nothing reaches the link
+in that state: the mod logs that it will dial once the client has loaded, and it never loads.
+Mesa's EGL on the same llvmpipe has the config, so the image sets `SDL_VIDEO_FORCE_EGL=1` and
+installs `libegl1` and `libegl-mesa0`.
+
 `com.mojang:jtracy` is the exception and does not matter: it is a profiler the client loads
 lazily, so the x86_64 jar stays on the classpath and never loads.
 

@@ -85,11 +85,11 @@ public final class EventPump {
 
         JsonObject data = new JsonObject();
         data.addProperty("id", advancement.id().toString());
-        data.addProperty("frame", display.getType().getSerializedName());
-        data.addProperty("description", display.getDescription().getString());
-        data.add("descriptionComponent", Segments.raw(display.getDescription()));
+        data.addProperty("frame", display.type().getSerializedName());
+        data.addProperty("description", display.description().getString());
+        data.add("descriptionComponent", Segments.raw(display.description()));
 
-        emit("toast", "advancement", display.getTitle(), data);
+        emit("toast", "advancement", display.title(), data);
     }
 
     public void recipe(ItemStack result) {

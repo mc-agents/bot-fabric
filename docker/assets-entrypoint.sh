@@ -7,7 +7,7 @@
 #
 # The contract is the operator's:
 #
-#     mc-assets --version 26.1.2 --dest /mc
+#     mc-assets --version 26.3 --dest /mc
 #
 # and the same two as MC_VERSION and MC_ASSETS_DIR. The Fabric loader version is not in it: the
 # image knows which loader its bot was built against, and a caller guessing one would produce a

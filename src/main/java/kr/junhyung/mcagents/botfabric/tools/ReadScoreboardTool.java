@@ -111,8 +111,9 @@ public final class ReadScoreboardTool extends ReadTool {
     private static Objective displayed(Scoreboard scoreboard, DisplaySlot slot, LocalPlayer player) {
         if (slot == DisplaySlot.SIDEBAR) {
             PlayerTeam team = scoreboard.getPlayersTeam(player.getScoreboardName());
-            DisplaySlot teamSlot = team == null ? null : DisplaySlot.teamColorToSlot(team.getColor());
-            Objective teamObjective = teamSlot == null ? null : scoreboard.getDisplayObjective(teamSlot);
+            Objective teamObjective = team == null ? null : team.getColor()
+                    .map(color -> scoreboard.getDisplayObjective(color.displaySlot()))
+                    .orElse(null);
             if (teamObjective != null) {
                 return teamObjective;
             }

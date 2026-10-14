@@ -10,7 +10,9 @@ import kr.junhyung.mcagents.botfabric.tool.Tool;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -73,10 +75,12 @@ public final class InteractEntityTool implements Tool {
         @Override
         public boolean tick(CallContext call) {
             LocalPlayer player = Mc.requirePlayer();
+            ItemStack held = player.getMainHandItem();
+            InteractionResult result;
 
             if (aimed != null) {
                 /* Where on the entity the crosshair met it, which is what a player's click sends. */
-                Mc.client().gameMode.interact(player, target, aimed, InteractionHand.MAIN_HAND);
+                result = Mc.client().gameMode.interact(player, target, aimed, InteractionHand.MAIN_HAND);
             } else {
                 if (!approach.reached(player, target)) {
                     return false;
@@ -84,10 +88,13 @@ public final class InteractEntityTool implements Tool {
 
                 Vec3 eyes = target.getEyePosition();
                 player.lookAt(EntityAnchorArgument.Anchor.EYES, eyes);
-                Mc.client().gameMode.interact(player, target, new EntityHitResult(target, eyes),
+                result = Mc.client().gameMode.interact(player, target, new EntityHitResult(target, eyes),
                         InteractionHand.MAIN_HAND);
             }
-            player.swing(InteractionHand.MAIN_HAND);
+            if (result instanceof InteractionResult.Success success
+                    && success.swingSource() == InteractionResult.SwingSource.PREDICTED) {
+                player.swing(InteractionHand.MAIN_HAND, held.getInteractAnimation(), false);
+            }
 
             call.ok("Right-clicked " + Entities.named(target) + ".");
             return true;

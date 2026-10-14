@@ -9,7 +9,7 @@ to dial.
 docker compose -f dev/compose.yml up -d
 ```
 
-Paper 26.1.2, offline mode, creative, flat world, port 25578. `fabric_bot` is opped on startup.
+Paper 26.3, offline mode, creative, flat world, port 25578. `fabric_bot` is opped on startup.
 
 The dialog checks need a datapack, and the dialog registry is only read when the world loads,
 so `/reload` is not enough:
@@ -43,7 +43,7 @@ No dependencies. It is how you drive the bot without `mcp-server`.
 ## The image, which is what a change is verified against
 
 ```sh
-./hack/image.sh                   # tagged bot-fabric:local-mc26.1.2
+./hack/image.sh                   # tagged bot-fabric:local-mc26.3
 ./hack/image.sh bot-fabric:try    # or a tag of your own
 ```
 
@@ -71,6 +71,6 @@ docker run --rm --platform linux/amd64 \
     bot-fabric-headless dev/run-headless.sh
 ```
 
-`linux/amd64` is not a preference. Mojang's version manifest for 26.1.2 ships LWJGL natives for
+`linux/amd64` is not a preference. Mojang's version manifest for 26.3 ships LWJGL natives for
 `linux` (x86_64), `macos`, `macos-arm64` and `windows` — there is no `linux-arm64`. On an ARM
 host the container runs under emulation until the image substitutes LWJGL's own arm64 natives.

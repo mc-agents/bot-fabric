@@ -9,7 +9,7 @@ RUN apt-get update \
       python3 \
       curl \
       xvfb \
-      libgl1 libglx-mesa0 libgl1-mesa-dri \
+      libgl1 libglx-mesa0 libgl1-mesa-dri libegl1 libegl-mesa0 \
       libx11-6 libxext6 libxrandr2 libxinerama1 libxcursor1 libxi6 libxxf86vm1 libxtst6 \
       libopenal1 \
       ca-certificates \
@@ -19,7 +19,12 @@ RUN apt-get update \
  && chmod 1777 /tmp/.X11-unix \
  && chown bot:bot /mc /data
 
-ENV LIBGL_ALWAYS_SOFTWARE=1 \
+# EGL rather than GLX. Since 26.3 the client opens its window through SDL and asks for an
+# sRGB-capable framebuffer, and Xvfb's GLX offers no visual with one, so OpenGL failed with
+# "Couldn't find matching GLX visual", Vulkan found no surface, and the client never loaded.
+# Mesa's EGL has the config on the same llvmpipe.
+ENV SDL_VIDEO_FORCE_EGL=1 \
+    LIBGL_ALWAYS_SOFTWARE=1 \
     MESA_LOADER_DRIVER_OVERRIDE=llvmpipe \
     GALLIUM_DRIVER=llvmpipe \
     MC_ASSETS_DIR=/mc \

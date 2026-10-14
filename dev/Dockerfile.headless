@@ -3,12 +3,14 @@ FROM eclipse-temurin:25-jdk
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       xvfb \
-      libgl1 libglx-mesa0 libgl1-mesa-dri libglu1-mesa \
+      libgl1 libglx-mesa0 libgl1-mesa-dri libglu1-mesa libegl1 libegl-mesa0 \
       libx11-6 libxext6 libxrandr2 libxinerama1 libxcursor1 libxi6 libxxf86vm1 \
       libopenal1 \
       ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
-ENV LIBGL_ALWAYS_SOFTWARE=1 \
+# EGL, as in the image: Xvfb's GLX has no sRGB visual, which the client asks for since 26.3.
+ENV SDL_VIDEO_FORCE_EGL=1 \
+    LIBGL_ALWAYS_SOFTWARE=1 \
     MESA_LOADER_DRIVER_OVERRIDE=llvmpipe \
     GALLIUM_DRIVER=llvmpipe

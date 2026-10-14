@@ -2,7 +2,7 @@ package kr.junhyung.mcagents.botfabric.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import kr.junhyung.mcagents.botfabric.render.Cursor;
-import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.gui.Gui;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
@@ -14,16 +14,16 @@ import org.spongepowered.asm.mixin.injection.At;
  * placed are all the screen's own; the mouse handler itself is never moved, so a cleared override
  * is the real cursor again on the next frame.
  */
-@Mixin(GameRenderer.class)
-public class GameRendererMixin {
+@Mixin(Gui.class)
+public class GuiMixin {
 
-    @ModifyExpressionValue(method = "extractGui",
+    @ModifyExpressionValue(method = "extractRenderState",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseHandler;getScaledXPos(Lcom/mojang/blaze3d/platform/Window;)D"))
     private double botfabric$cursorX(double real) {
         return Cursor.x(real);
     }
 
-    @ModifyExpressionValue(method = "extractGui",
+    @ModifyExpressionValue(method = "extractRenderState",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseHandler;getScaledYPos(Lcom/mojang/blaze3d/platform/Window;)D"))
     private double botfabric$cursorY(double real) {
         return Cursor.y(real);

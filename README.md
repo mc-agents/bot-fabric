@@ -95,7 +95,7 @@ reported that it never spawned. `/readyz` means the same thing now -- a pod that
 can be given a world.
 
 The second-long floor under most calls is the frame budget. Rendering cannot be turned off —
-GLFW and GL are set up in the `Minecraft` constructor — so it runs at 1fps while idle, and a
+the window and GL are set up in the `Minecraft` constructor — so it runs at 1fps while idle, and a
 loop iteration is where queued work runs. A call in flight raises the budget to 60fps and
 settling lowers it again, so the cost is paid once per call rather than per tool, and a call
 that arrives while the loop is still spinning fast returns in tens of milliseconds.
@@ -187,7 +187,7 @@ A screenshot reports its own dimensions rather than making the server parse a PN
 
 ## Building and running
 
-Java 25. One Minecraft version, 26.1.2.
+Java 25. One Minecraft version, 26.3.
 
 ```sh
 ./gradlew build
@@ -196,11 +196,11 @@ Java 25. One Minecraft version, 26.1.2.
 The version lives in five lines of `gradle.properties`, and nothing else names it:
 
 ```properties
-minecraft_version=26.1.2
+minecraft_version=26.3
 loader_version=0.19.5
-fabric_api_version=0.155.3+26.1.2
+fabric_api_version=0.163.0+26.3
 java_version=25
-mc_compat=~26.1.2
+mc_compat=~26.3
 ```
 
 Loom's own version is build tooling rather than a game dependency, so it sits in the root
@@ -212,7 +212,7 @@ Loom's own version is build tooling rather than a game dependency, so it sits in
 llvmpipe is the environment it is developed and checked in.
 
 ```sh
-docker compose -f dev/compose.yml up -d                    # Paper 26.1.2 on :25578
+docker compose -f dev/compose.yml up -d                    # Paper 26.3 on :25578
 python3 dev/rpc-harness.py dev/headless.txt --port 8766    # stand-in for mcp-server
 docker build --platform linux/amd64 -f dev/Dockerfile.headless -t bot-fabric-headless dev
 docker run --rm --platform linux/amd64 \
@@ -236,11 +236,11 @@ script format.
 
 ```sh
 ./gradlew build
-mkdir -p dist && cp build/libs/botfabric-*+26.1.2.jar dist/
+mkdir -p dist && cp build/libs/botfabric-*+26.3.jar dist/
 docker build --platform linux/amd64 \
-    --build-arg MINECRAFT_VERSION=26.1.2 \
+    --build-arg MINECRAFT_VERSION=26.3 \
     --build-arg LOADER_VERSION=0.19.5 \
-    --build-arg FABRIC_API_VERSION=0.155.3+26.1.2 \
+    --build-arg FABRIC_API_VERSION=0.163.0+26.3 \
     -t bot-fabric:dev .
 docker run --rm -v bot-fabric-mc:/mc -e MCP_SERVER_HOST=... bot-fabric:dev
 ```
@@ -350,7 +350,7 @@ unchanged on 26.2, which is the number that decides what following a version cos
   arm64 the x86_64 jar stays on the classpath and simply never loads. Nothing else needs it.
 - **The client jar is not in any image.** `docker/fetch-minecraft.py` fetches it from Mojang's
   manifest into a cache volume, as an init container or on first start.
-- **One bot per process.** `Minecraft.getInstance()`, `RenderSystem` and GLFW are all JVM-global.
+- **One bot per process.** `Minecraft.getInstance()`, `RenderSystem` and SDL are all JVM-global.
 - **Yarn does not exist for 26.x.** Mojang mappings, no remapping; see `docs/notes.md`.
 
 `docs/notes.md` has the rest of what was measured, including the things that were guessed wrong

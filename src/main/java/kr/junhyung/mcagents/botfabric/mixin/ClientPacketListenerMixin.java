@@ -88,7 +88,7 @@ public class ClientPacketListenerMixin {
     @Inject(method = "handleParticleEvent", at = @At("TAIL"))
     private void botfabric$particle(ClientboundLevelParticlesPacket packet, CallbackInfo info) {
         Feeds.effect("particle",
-                BuiltInRegistries.PARTICLE_TYPE.getKey(packet.getParticle().getType()).toString());
+                BuiltInRegistries.PARTICLE_TYPE.getKey(packet.particle().getType()).toString());
     }
 
     @Inject(method = "handleAwardStats", at = @At("TAIL"))

@@ -54,7 +54,7 @@ public final class SelectBundleItemTool extends ActionTool {
         ItemStack bundle = target.getItem();
         BundleMouseActions scroll = scroll(screen, target);
         BundleContents contents = bundle.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
-        List<ItemStack> items = contents.itemCopyStream().toList();
+        List<ItemStack> items = contents.itemCopies().toList();
 
         if (items.isEmpty()) {
             throw ToolException.refused("EMPTY_BUNDLE", "the bundle in slot " + slot + " is empty");

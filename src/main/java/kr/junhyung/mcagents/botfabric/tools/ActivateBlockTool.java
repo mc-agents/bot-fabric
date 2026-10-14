@@ -14,6 +14,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -81,9 +83,18 @@ public final class ActivateBlockTool implements Tool {
             Vec3 middle = Vec3.atCenterOf(at);
 
             player.lookAt(EntityAnchorArgument.Anchor.EYES, middle);
-            Mc.client().gameMode.useItemOn(player, InteractionHand.MAIN_HAND,
-                    new BlockHitResult(middle, Direction.UP, at, false));
-            player.swing(InteractionHand.MAIN_HAND);
+            /*
+            The arm is the client's own business after 26.1.2: there is no swing packet any more,
+            and the server swings for everyone else when the use succeeds. Swinging here only when
+            the prediction says so is what vanilla does, and keeps a refused click from looking like
+            one.
+            */
+            ItemStack held = player.getMainHandItem();
+            if (Mc.client().gameMode.useItemOn(player, InteractionHand.MAIN_HAND,
+                    new BlockHitResult(middle, Direction.UP, at, false)) instanceof InteractionResult.Success success
+                    && success.swingSource() == InteractionResult.SwingSource.PREDICTED) {
+                player.swing(InteractionHand.MAIN_HAND, held.getInteractAnimation(), false);
+            }
 
             call.ok("Right-clicked " + block + " at " + Positions.point(at) + ".");
             return true;

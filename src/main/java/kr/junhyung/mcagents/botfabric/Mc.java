@@ -23,34 +23,37 @@ public final class Mc {
     /**
      * The places a newer Minecraft moves, behind names that do not move.
      *
-     * <p>Screens, the boss bar overlay and the render target all changed owner in 26.2: the screen
-     * went from a field on Minecraft to Gui, the overlay went one level deeper into Hud, and the
-     * render target went to GameRenderer. Every tool that touched one of them broke, which was
-     * fifteen errors for four renames. Behind these, moving to that version is one edit each.
+     * <p>Screens, the boss bar overlay, the HUD toggle and the render target all changed owner in
+     * 26.2: the screen went from a field on Minecraft to Gui, the overlay and the toggle went one
+     * level deeper into Hud, and the render target went to GameRenderer. Every tool that touched
+     * one of them broke, which was fifteen errors for four renames. Behind these, the next move is
+     * one edit each.
      */
     public static Screen screen() {
-        return client().screen;
+        return client().gui.screen();
     }
 
     public static void setScreen(Screen screen) {
-        client().setScreen(screen);
+        client().gui.setScreen(screen);
     }
 
     public static BossHealthOverlay bossOverlay() {
-        return client().gui.getBossOverlay();
+        return client().gui.hud.getBossOverlay();
     }
 
     /** Whether the HUD is drawn. A screenshot of the world wants it off and then back as it was. */
     public static boolean hudHidden() {
-        return client().options.hideGui;
+        return client().gui.hud.isHidden();
     }
 
     public static void hideHud(boolean hidden) {
-        client().options.hideGui = hidden;
+        if (client().gui.hud.isHidden() != hidden) {
+            client().gui.hud.toggle();
+        }
     }
 
     public static RenderTarget renderTarget() {
-        return client().getMainRenderTarget();
+        return client().gameRenderer.mainRenderTarget();
     }
 
     /**

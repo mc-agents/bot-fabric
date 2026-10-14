@@ -15,6 +15,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -136,9 +138,12 @@ public final class PlaceBlockTool implements Tool {
             Vec3 middle = Vec3.atCenterOf(against).add(hit.getUnitVec3().scale(0.5));
 
             player.lookAt(EntityAnchorArgument.Anchor.EYES, middle);
-            Mc.client().gameMode.useItemOn(player, InteractionHand.MAIN_HAND,
-                    new BlockHitResult(middle, hit, against, false));
-            player.swing(InteractionHand.MAIN_HAND);
+            ItemStack held = player.getMainHandItem();
+            if (Mc.client().gameMode.useItemOn(player, InteractionHand.MAIN_HAND,
+                    new BlockHitResult(middle, hit, against, false)) instanceof InteractionResult.Success success
+                    && success.swingSource() == InteractionResult.SwingSource.PREDICTED) {
+                player.swing(InteractionHand.MAIN_HAND, held.getInteractAnimation(), false);
+            }
 
             call.ok("Placed a block at " + Positions.point(at)
                     + " against its " + chosen.getName() + " face.");
