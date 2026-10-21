@@ -27,6 +27,7 @@
     "GuiMixin",
     "ItemCooldownsAccessor",
     "ItemDisplayInvoker",
+    "ItemDisplayWidgetAccessor",
     "KeyboardInputMixin",
     "MerchantScreenInvoker",
     "ClientPacketListenerAccessor",

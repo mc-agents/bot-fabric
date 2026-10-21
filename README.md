@@ -168,6 +168,8 @@ The ones worth naming:
 | `click-chat` | presses what a server wrote in chat -- a quest's choices, a shop's items; the client's own in-game handler does it, so a URL cannot be opened from here |
 | `get-target-block` | the pick the crosshair is drawn from: the block, which face of it, or the entity in the way |
 | `read-dialog` | the dialog as the game serialises it, read from the packet rather than from the screen |
+| `read-dialog-body`, `click-dialog-body`, `hover-dialog-body` | a dialog whose body is the menu: every run with a click or hover event and every item, with the box its glyphs cover and a point the client's own hit test gives to it; a press goes in through the mouse handler, so a piece covered by the next one or drawn outside its widget is missed the way a player misses it |
+| `use-mouse` | moves, presses and scrolls on whatever screen is open, through the mouse handler and never the host's pointer, and leaves the cursor where it was put |
 | `craft-item` | the server places the recipe; a grid bigger than the player's own says so rather than placing where it cannot fit, and the answer is what the inventory gained |
 | `find-blocks` | the whole cube read, sorted by real distance; the outward walk is what lets it stop early, not what orders the answer |
 | `read-block-entity` | sign faces as components; anything else is a block entity the client holds decoded, with no tag to write out, and it says so |

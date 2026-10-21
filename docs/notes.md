@@ -127,3 +127,19 @@ It then tries to report that in a Swing window, which in a container fails on
 `xvfb-run` as PID 1 starts Xvfb and then never runs its command — no output, no java, a container
 that sits there. The entrypoint starts `Xvfb` itself and `exec`s java, which also means signals
 reach the client.
+
+## The left mouse button is 1
+
+26.x hands the window system's button numbers through unchanged: left is 1, middle 2, right 3.
+A widget takes a press only from button 1, and a container screen turns 1 and 3 into the 0 and 1
+its click packet carries. Pressed with the old 0 through `MouseHandler`, a dialog's body took the
+press, found the run under it, and ran nothing — no error anywhere, the dialog simply stayed up.
+`Button.onPress(MouseButtonInfo)` does not look at the number, which is why the tools that call it
+directly never noticed.
+
+## A loading overlay drops every press
+
+While the client reloads resources — a pack applied or taken away — `MouseHandler.onButton` sees
+the overlay and returns. A press made then is reported by nobody and reaches nothing, and the next
+tool call runs into a screen that never heard it. The mouse tools wait for the overlay to go before
+they press, and read the screen only then, since a reload can move what is on it.
