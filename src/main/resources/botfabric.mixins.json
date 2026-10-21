@@ -13,6 +13,7 @@
     "BundleMouseActionsInvoker",
     "ClientAdvancementsAccessor",
     "ClientCommonPacketListenerMixin",
+    "ClientHandshakePacketListenerMixin",
     "ClientPacketListenerMixin",
     "CommandBlockEditScreenAccessor",
     "ConfirmScreenAccessor",

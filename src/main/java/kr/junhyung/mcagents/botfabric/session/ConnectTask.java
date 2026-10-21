@@ -84,7 +84,7 @@ public final class ConnectTask implements Task {
             part that says where to look.
             */
             String title = disconnected.getTitle().getString();
-            String said = ((DisconnectedScreenAccessor) disconnected).mcagents$details().reason().getString();
+            String said = Disconnects.said(((DisconnectedScreenAccessor) disconnected).mcagents$details().reason().getString());
             String reason = said.isBlank() || said.equals(title) ? title : title + ": " + said;
             session.report("disconnected", reason, reason);
             /*

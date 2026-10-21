@@ -115,6 +115,7 @@ public final class Session {
     public void joinStarted() {
         joining = true;
         loggedIn = false;
+        Disconnects.forget();
     }
 
     public void joinEnded() {

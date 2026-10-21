@@ -143,3 +143,12 @@ While the client reloads resources — a pack applied or taken away — `MouseHa
 the overlay and returns. A press made then is reported by nobody and reaches nothing, and the next
 tool call runs into a screen that never heard it. The mouse tools wait for the overlay to go before
 they press, and read the screen only then, since a reload can move what is on it.
+
+## A refusal can read as "Disconnected"
+
+`Connection.disconnect` closes the channel and waits for the close before it keeps the reason, and
+the client thread, ticking the connection, can see the channel shut in between. It then hands the
+listener the generic `multiplayer.disconnect.generic` — "Disconnected" — and the connect screen
+shows that. A whitelisted login read as a refusal with no reason, once in a full run of the suite.
+The server's words are taken off its disconnect packet as it arrives instead, for the login and for
+the common listener both, and the screen's text is used only when the server sent none.

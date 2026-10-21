@@ -12,6 +12,7 @@ import net.minecraft.network.Connection;
 import net.minecraft.network.DisconnectionDetails;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundClearDialogPacket;
+import net.minecraft.network.protocol.common.ClientboundDisconnectPacket;
 import net.minecraft.network.protocol.common.ServerboundResourcePackPacket;
 import net.minecraft.server.dialog.Dialog;
 import org.spongepowered.asm.mixin.Final;
@@ -75,6 +76,11 @@ public class ClientCommonPacketListenerMixin {
         if (packet instanceof ServerboundResourcePackPacket pack) {
             ResourcePacks.reported(pack.action().name());
         }
+    }
+
+    @Inject(method = "handleDisconnect", at = @At("HEAD"))
+    private void botfabric$told(ClientboundDisconnectPacket packet, CallbackInfo info) {
+        Disconnects.told(packet.reason().getString());
     }
 
     @Inject(method = "onDisconnect", at = @At("TAIL"))
