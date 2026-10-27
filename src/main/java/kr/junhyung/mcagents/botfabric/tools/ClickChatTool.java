@@ -28,8 +28,8 @@ import java.util.stream.Collectors;
  * the component an agent reads that from; without this there is no way to answer one, and the
  * flows that a player drives by clicking could only be driven by guessing the command behind them.
  *
- * <p>The client's own handler does the pressing, and the in-game one: it runs a command or opens a
- * dialog and knows nothing of opening a URL or a file. A line from a server therefore cannot send
+ * <p>The client's own handler does the pressing, and the in-game one: it runs a command, opens a
+ * dialog or sends the server a plugin's custom action, and knows nothing of opening a URL or a file. A line from a server therefore cannot send
  * the host to a browser, because the method that would is not the method being called.
  */
 public final class ClickChatTool implements Tool {
@@ -72,8 +72,11 @@ public final class ClickChatTool implements Tool {
         }
     }
 
+    /** A custom click with its id, which is the one thing that tells two of them apart. */
     private static String action(ClickEvent event) {
-        return event.action().getSerializedName();
+        return event instanceof ClickEvent.Custom custom
+                ? "custom " + custom.id()
+                : event.action().getSerializedName();
     }
 
     private static final class ClickTask implements Task {
@@ -108,14 +111,14 @@ public final class ClickChatTool implements Tool {
             }
 
             /*
-            Only the two the client handles inside the game. Anything else is a click this bot has
+            Only the three the client handles inside the game. Anything else is a click this bot has
             no business making on a host it does not own, and saying which one it was tells a
             caller whether the server meant something a player could press at all.
             */
             if (!isInGame(found.event())) {
                 throw ToolException.refused("CLICK_NOT_IN_GAME", "\"" + found.text() + "\" is a "
-                        + action(found.event()) + " click, and only run_command and show_dialog are"
-                        + " pressed from here. The rest leave the game -- a browser, a file, the"
+                        + action(found.event()) + " click, and only run_command, show_dialog and custom"
+                        + " are pressed from here. The rest leave the game -- a browser, a file, the"
                         + " clipboard -- which is not this bot's to do.");
             }
 
@@ -156,8 +159,10 @@ public final class ClickChatTool implements Tool {
             return true;
         }
 
+        /** A custom click is a packet to the server with the id and payload it wrote, and nothing on this side. */
         private static boolean isInGame(ClickEvent event) {
-            return event instanceof ClickEvent.RunCommand || event instanceof ClickEvent.ShowDialog;
+            return event instanceof ClickEvent.RunCommand || event instanceof ClickEvent.ShowDialog
+                    || event instanceof ClickEvent.Custom;
         }
 
         /** Newest first, which is the order a line is looked for in. */

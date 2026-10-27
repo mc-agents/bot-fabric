@@ -13,10 +13,10 @@ import org.spongepowered.asm.mixin.gen.Invoker;
  * pressing one is a thing a player does. Running the command ourselves would be a guess at what
  * the client does with it; this is what it does.
  *
- * <p>The game variant on purpose. It handles the two events that happen inside the game -- running
- * a command and opening a dialog -- and knows nothing about opening a URL or a file, so a line
- * from a server cannot send this bot's host to a browser. That is a property of which method is
- * called rather than a check that could be forgotten.
+ * <p>The game variant on purpose. It handles the events that happen inside the game -- running a
+ * command, opening a dialog, sending a custom action -- and knows nothing about opening a URL or a
+ * file, so a line from a server cannot send this bot's host to a browser. That is a property of
+ * which method is called rather than a check that could be forgotten.
  */
 @Mixin(Screen.class)
 public interface ScreenInvoker {
