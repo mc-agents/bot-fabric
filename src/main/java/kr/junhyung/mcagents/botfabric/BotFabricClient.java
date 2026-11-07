@@ -60,6 +60,7 @@ import kr.junhyung.mcagents.botfabric.tools.GetWorldStateTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadAdvancementsTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadBookTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadContainerOptionsTool;
+import kr.junhyung.mcagents.botfabric.tools.PressQuickActionsTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadDialogBodyTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadBossBarsTool;
 import kr.junhyung.mcagents.botfabric.tools.ReadPlayerListTool;
@@ -191,6 +192,7 @@ public class BotFabricClient implements ClientModInitializer {
         tools.register(new ScreenshotTool(scheduler));
         tools.register(new HoverSlotTool(scheduler));
         tools.register(new ClickChatTool(scheduler));
+        tools.register(new PressQuickActionsTool(scheduler));
         tools.register(new PressDialogButtonTool(scheduler));
         tools.register(new ReadDialogBodyTool());
         tools.register(new ClickDialogBodyTool(scheduler));

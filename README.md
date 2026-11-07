@@ -166,6 +166,7 @@ The ones worth naming:
 | `select-bundle-item` | the call a scroll over a bundle's tooltip makes, with the index it would have scrolled to; the answer lists what is inside, which read-window does not |
 | `pick-block` | a middle-click is only a position the server checks against reach, so the bot walks up and faces it, and answers with the hand the server sent back |
 | `click-chat` | presses what a server wrote in chat -- a quest's choices, a shop's items, a plugin's custom action; the client's own in-game handler does it, so a URL cannot be opened from here |
+| `press-quick-actions` | the G key: the client opens what the server put in its `minecraft:quick_actions` tag, and a tag with nothing in it is refused by name, since a press there would do nothing and look like it had worked |
 | `get-target-block` | the pick the crosshair is drawn from: the block, which face of it, or the entity in the way |
 | `read-dialog` | the dialog as the game serialises it, read from the packet rather than from the screen |
 | `read-dialog-body`, `click-dialog-body`, `hover-dialog-body` | a dialog whose body is the menu: every run with a click or hover event and every item, with the box its glyphs cover and a point the client's own hit test gives to it; a press goes in through the mouse handler, so a piece covered by the next one or drawn outside its widget is missed the way a player misses it |
