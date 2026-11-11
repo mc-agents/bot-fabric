@@ -38,8 +38,12 @@ public final class Session {
     /** Whether the server accepted the login of the connect in flight. Set from the network thread. */
     private volatile boolean loggedIn;
 
-    public Session(RpcClient client) {
+    /** The epoch second the Microsoft account's Minecraft token stops working, or zero offline. */
+    private final long sessionExpiresAt;
+
+    public Session(RpcClient client, long sessionExpiresAt) {
         this.client = client;
+        this.sessionExpiresAt = sessionExpiresAt;
     }
 
     public String address() {
@@ -55,12 +59,34 @@ public final class Session {
         this.username = username;
     }
 
-    public void applyUsername(String name) {
+    /**
+     * Puts the name a connect asked for on the client, and returns the name it will join as.
+     *
+     * <p>Offline the name is the whole identity, and any name will do. A client launched as a
+     * Microsoft account keeps the account: its name is the only one Mojang vouches for, and the
+     * offline user this used to put in its place carried no token and was refused by every
+     * online-mode server.
+     */
+    public String applyUsername(String name) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (signedIn()) {
+            return minecraft.getUser().getName();
+        }
         UUID id = UUIDUtil.createOfflinePlayerUUID(name);
         User user = new User(name, id, "", Optional.empty(), Optional.empty());
-        MinecraftAccessor accessor = (MinecraftAccessor) Minecraft.getInstance();
+        MinecraftAccessor accessor = (MinecraftAccessor) minecraft;
         accessor.botfabric$setUser(user);
         accessor.botfabric$setProfileFuture(CompletableFuture.completedFuture(null));
+        return name;
+    }
+
+    public boolean signedIn() {
+        return sessionExpiresAt > 0;
+    }
+
+    /** Whether the account's token runs out within the given time, which a join must not straddle. */
+    public boolean sessionEndsWithin(long millis) {
+        return signedIn() && System.currentTimeMillis() + millis > sessionExpiresAt * 1000;
     }
 
     /**
@@ -197,6 +223,10 @@ public final class Session {
 
     public void report(String state) {
         report(state, null, null);
+    }
+
+    public void log(String level, String message) {
+        client.log(level, message);
     }
 
     public void report(String state, String reason, String lastError) {

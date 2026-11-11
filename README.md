@@ -299,6 +299,8 @@ one tool that is not ready costs itself and nothing else, which is what running
 | `HEALTH_PORT` | `8080` | `/healthz` while the process is up, `/readyz` once it has linked |
 | `BOT_RENDER_DISTANCE` | `8` | chunks, clamped to 2..32. A fresh client picks 16, which a bot has no use for. Simulation distance follows it down only as far as 5, which is the lowest the client takes |
 | `BOT_FRAME_RATE_LIMIT` | `1` | frames a second while idle; a call in flight raises it to 60 |
+| `BOT_AUTH` | `offline` | `offline` or `microsoft`; anything else and the entrypoint says so and stops |
+| `BOT_AUTH_REFRESH_TOKEN` | | `microsoft` only, and required: what `login` printed. Never logged |
 
 Of the last two the operator used to send only `BOT_FRAME_RATE_LIMIT`; `BOT_RENDER_DISTANCE` had
 no field in the CRD at all, so in a cluster the chunk count -- the largest lever there is on a
@@ -310,6 +312,26 @@ particles still reports them.
 
 Each has a system property twin (`mcagents.rpc.port` and so on) so the Gradle run configs can
 set them: `./gradlew runClient -Prpc.port=8766`.
+
+### A Microsoft account
+
+For a server that stays in online mode. One account is one player, so this is one bot written out
+by hand, never a scaled service. Log in once, with a browser to hand:
+
+```sh
+docker run --rm -i bot-fabric:local-mc26.3 login > refresh-token
+```
+
+The link to open and, at the end, the account's Minecraft name go to stderr; only the refresh token
+goes to stdout, so it lands in the file or, in a cluster, straight in a Secret that `spec.env` reads
+`BOT_AUTH_REFRESH_TOKEN` from. The bot signs in with it at every start, before it fetches anything,
+so a token that no longer works is the first line it prints.
+
+The account decides the name. A connect that asks for another joins as the account anyway, says so
+in its answer and in a `warn` over the link; set `BOT_NAME` to the account's name and nothing
+diverges. The client signs in only at launch, and Minecraft's token lasts a day: a connect the
+session would not last through stops the client instead, so the restart signs it in again and the
+next `join-server` goes through. A refresh token lasts about ninety days; log in again before that.
 
 ## Following a Minecraft version
 
@@ -347,8 +369,10 @@ unchanged on 26.2, which is the number that decides what following a version cos
 - **The RPC link is a shared secret, not a per-bot identity.** `BOT_LINK_TOKEN` proves a bot was
   deployed for the mcp-server it dials, and a NetworkPolicy keeps the port to that namespace; a
   bot that has the token can call itself any name.
-- **Offline mode only**, and commands that need a chat signature cannot be run from a dialog
-  button, as above.
+- **Offline by default**, and an offline bot cannot run a command that needs a chat signature from
+  a dialog button, as above. A bot signed in to a Microsoft account has a profile key to sign
+  with; whether that lifts both this and `send-chat`'s refusal on a secure-chat server has not been
+  tried.
 - **`com.mojang:jtracy` has no arm64 build.** It is the profiler the client loads lazily, so on
   arm64 the x86_64 jar stays on the classpath and simply never loads. Nothing else needs it.
 - **The client jar is not in any image.** `docker/fetch-minecraft.py` fetches it from Mojang's

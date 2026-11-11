@@ -12,7 +12,8 @@ import kr.junhyung.mcagents.botfabric.render.RenderOptions;
  * for running the client by hand with nothing driving it.
  */
 public record BotConfig(String host, int port, String botName, String linkToken, long reconnectDelayMs,
-                        boolean enabled, int healthPort, int renderDistance, int frameRateLimit) {
+                        boolean enabled, int healthPort, int renderDistance, int frameRateLimit,
+                        long sessionExpiresAt) {
     public static BotConfig fromEnvironment() {
         String host = env("MCP_SERVER_HOST", "127.0.0.1");
         int port = Integer.parseInt(env("MCP_SERVER_PORT", "8765"));
@@ -41,7 +42,12 @@ public record BotConfig(String host, int port, String botName, String linkToken,
         */
         int distance = RenderOptions.distanceFrom(env("BOT_RENDER_DISTANCE", ""));
         int frames = Integer.parseInt(env("BOT_FRAME_RATE_LIMIT", "1"));
-        return new BotConfig(host, port, name, linkToken, delay, enabled, healthPort, distance, frames);
+        /*
+        Not the contract's: the entrypoint sets it after signing in to Microsoft, as the epoch second
+        the Minecraft token stops working. Zero is offline.
+        */
+        long expires = Long.parseLong(env("BOT_AUTH_EXPIRES_AT", "0"));
+        return new BotConfig(host, port, name, linkToken, delay, enabled, healthPort, distance, frames, expires);
     }
 
     private static String env(String key, String fallback) {

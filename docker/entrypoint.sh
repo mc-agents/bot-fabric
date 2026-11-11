@@ -8,6 +8,38 @@
 # bot pod went looking for a client in a directory nothing had filled.
 set -eu
 
+if [ "${1:-}" = login ]; then
+    exec /opt/bot-fabric/microsoft-auth.py login
+fi
+
+# Signed in before anything slow, so a refresh token that no longer works is the first line out and
+# not something found after a minute of fetching the client.
+case "${BOT_AUTH:-offline}" in
+    offline)
+        set -- --username "${BOT_NAME:-${HOSTNAME:-fabric_bot}}" \
+            --uuid 00000000-0000-0000-0000-000000000000 \
+            --accessToken 0 \
+            --userType legacy \
+            "$@"
+        ;;
+    microsoft)
+        account=$(/opt/bot-fabric/microsoft-auth.py session)
+        name=$(echo "$account" | sed -n 1p)
+        # Read by the mod, which turns down a join the session will not last through.
+        BOT_AUTH_EXPIRES_AT=$(echo "$account" | sed -n 4p)
+        export BOT_AUTH_EXPIRES_AT
+        echo "signed in to Microsoft as $name" >&2
+        set -- --username "$name" \
+            --uuid "$(echo "$account" | sed -n 2p)" \
+            --accessToken "$(echo "$account" | sed -n 3p)" \
+            "$@"
+        ;;
+    *)
+        echo "BOT_AUTH is \"$BOT_AUTH\"; it is offline or microsoft" >&2
+        exit 1
+        ;;
+esac
+
 MC_ASSETS_DIR="${MC_ASSETS_DIR:-/mc}"
 BOT_WORK_DIR="${BOT_WORK_DIR:-/data}"
 MC_VERSION="${MC_VERSION:-$BOT_FABRIC_MINECRAFT}"
@@ -62,10 +94,6 @@ done
 export DISPLAY=":$DISPLAY_NUMBER"
 
 exec java $JAVA_OPTS -cp "$classpath" "$main_class" \
-    --username "${BOT_NAME:-${HOSTNAME:-fabric_bot}}" \
-    --uuid 00000000-0000-0000-0000-000000000000 \
-    --accessToken 0 \
-    --userType legacy \
     --versionType release \
     --version "$MC_VERSION" \
     --gameDir "$BOT_WORK_DIR" \

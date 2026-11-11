@@ -32,7 +32,7 @@ ENV SDL_VIDEO_FORCE_EGL=1 \
     BOT_FABRIC_MINECRAFT=${MINECRAFT_VERSION} \
     BOT_FABRIC_LOADER=${LOADER_VERSION}
 
-COPY docker/fetch-minecraft.py docker/entrypoint.sh /opt/bot-fabric/
+COPY docker/fetch-minecraft.py docker/microsoft-auth.py docker/entrypoint.sh /opt/bot-fabric/
 # Flat: one jar for the Minecraft version this image is for, not a directory per version. The
 # entrypoint copies mods/*.jar into the game directory, so a nested dist produces an image that
 # starts a client with no bot mod in it -- which looks like a client that will not link.

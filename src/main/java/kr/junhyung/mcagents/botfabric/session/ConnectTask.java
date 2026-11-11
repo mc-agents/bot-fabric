@@ -13,6 +13,9 @@ import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 
 public final class ConnectTask implements Task {
+    /** Slack past the join's own deadline, for the server's half of the login and a clock or two apart. */
+    private static final long SESSION_MARGIN_MS = 10 * 60_000;
+
     private final Session session;
     private final String host;
     private final int port;
@@ -21,6 +24,7 @@ public final class ConnectTask implements Task {
 
     private long startedAt;
     private boolean dialled;
+    private String joinedAs;
 
     public ConnectTask(Session session, String host, int port, String username, long spawnTimeoutMs) {
         this.session = session;
@@ -38,8 +42,23 @@ public final class ConnectTask implements Task {
     @Override
     public void start(CallContext call) {
         startedAt = System.currentTimeMillis();
-        session.rememberTarget(host, port, username);
-        session.applyUsername(username);
+        /*
+        The client signs in once, at launch, and Minecraft's token lasts a day. Past that the server
+        refuses the login as an invalid session, which reads as the server's fault, and nothing in
+        this process can sign in again. Stopping the client hands that to whatever restarts it.
+        */
+        if (session.sessionEndsWithin(spawnTimeoutMs + SESSION_MARGIN_MS)) {
+            call.fail(ToolError.TOOL, "JOIN_FAILED_LOGIN", "the bot's Microsoft session runs out before this join"
+                    + " would finish, so the bot is restarting to sign in again. Call join-server again once it"
+                    + " has linked", true);
+            Mc.client().stop();
+            return;
+        }
+        joinedAs = session.applyUsername(username);
+        if (!joinedAs.equals(username)) {
+            session.log("warn", "joining as " + joinedAs + ", not " + username + ": the Microsoft account decides the name");
+        }
+        session.rememberTarget(host, port, joinedAs);
         session.joinStarted();
         session.report("connecting");
     }
@@ -58,7 +77,7 @@ public final class ConnectTask implements Task {
     private void dial() {
         Minecraft minecraft = Mc.client();
         ServerAddress target = new ServerAddress(host, port);
-        ServerData data = new ServerData(username + "@" + host, host + ":" + port, ServerData.Type.OTHER);
+        ServerData data = new ServerData(joinedAs + "@" + host, host + ":" + port, ServerData.Type.OTHER);
         /*
         Without this the client asks. A server that requires its pack puts up "Proceed / Disconnect"
         during the join, nobody clicks it, and join-server gives up with a spawn timeout while the
@@ -99,7 +118,7 @@ public final class ConnectTask implements Task {
         }
         if (minecraft.player != null && minecraft.level != null && minecraft.getConnection() != null) {
             session.report("ready");
-            call.ok("joined " + host + ":" + port + " as " + username);
+            call.ok("joined " + host + ":" + port + " as " + joinedAs);
             return true;
         }
         if (System.currentTimeMillis() - startedAt > spawnTimeoutMs) {

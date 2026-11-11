@@ -38,8 +38,8 @@ class DispatcherTest {
     }
 
     private static Dispatcher dispatching(ToolRegistry tools) {
-        RpcClient client = new RpcClient(new BotConfig("127.0.0.1", 8765, "bot", "", 2000, true, 8080, 8, 1));
-        return new Dispatcher(tools, new TaskScheduler(), new Session(client), "bot", "",
+        RpcClient client = new RpcClient(new BotConfig("127.0.0.1", 8765, "bot", "", 2000, true, 8080, 8, 1, 0));
+        return new Dispatcher(tools, new TaskScheduler(), new Session(client, 0), "bot", "",
                 new EventPump(client));
     }
 
